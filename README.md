@@ -22,14 +22,17 @@
 3. Вставьте в чат:
 
 ```
-Поставь мне контент-фабрику IKIGAI PROMOTION.
-1. Добавь маркетплейс плагинов: /plugin marketplace add ikigai-promotion-kz/ikigai-content-factory
-2. Установи плагин content-factory
-3. Действуй по скиллу factory-setup
+Поставь мне контент-фабрику IKIGAI PROMOTION в эту папку.
+
+1. Склонируй https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory
+2. Прочитай factory/plugins/content-factory/skills/factory-setup/SKILL.md и действуй строго по нему
+3. Скопируй обе папки скиллов из factory/plugins/content-factory/skills/ в .claude/skills/ этого проекта
 
 Объясняй каждый шаг простыми словами и спрашивай разрешение перед установкой программ.
 В конце прогони проверку и покажи мне готовый ролик.
 ```
+
+Комплект оформлен и как **плагин** — если хочешь, чтобы скиллы фабрики были доступны во всех проектах, добавь маркетплейс `ikigai-promotion-kz/ikigai-content-factory`: в приложении Claude кнопкой **+ → Plugins → Add plugin**, в терминальной версии командой `/plugin marketplace add ikigai-promotion-kz/ikigai-content-factory`. Это удобство, а не условие работы.
 
 ## Что нужно на машине
 
