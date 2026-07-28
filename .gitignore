@@ -1,0 +1,23 @@
+# Секреты — только на вашей машине
+.env
+.env.local
+.mcp.json
+
+# Результаты прогонов
+engine/demo/out/
+engine/out/
+engine/tmp/
+**/look/
+**/frames/
+
+# Node — package-lock.json НЕ игнорируем: с ним `npm ci` ставит те же версии,
+# что проверены у нас, и установка у студента не падает на свежем ломающем релизе.
+node_modules/
+npm-debug.log*
+
+# Системное
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

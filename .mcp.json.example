@@ -1,0 +1,12 @@
+{
+  "_комментарий": "Скопируйте в .mcp.json в корне рабочей папки и подставьте свой ключ fal. Higgsfield добавляется через Customize → Connectors в приложении Claude, ключ ему не нужен.",
+  "mcpServers": {
+    "fal": {
+      "type": "http",
+      "url": "https://mcp.fal.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ВСТАВЬТЕ_СВОЙ_FAL_KEY"
+      }
+    }
+  }
+}

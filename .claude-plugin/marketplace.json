@@ -1,0 +1,19 @@
+{
+  "name": "ikigai-content-factory",
+  "owner": {
+    "name": "IKIGAI PROMOTION",
+    "url": "https://ikigaipromotion.kz"
+  },
+  "metadata": {
+    "description": "Контент-фабрика IKIGAI PROMOTION: монтаж Reels и генерация контента прямо из Claude Code",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "content-factory",
+      "source": "content-factory",
+      "description": "Установка и работа с контент-фабрикой: окружение, монтаж видео, генерация визуала",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>
+  /*
+    Оверлей монтажного слоя. Рисуется поверх уже смонтированной базы, поэтому знает
+    её геометрию: BOX — координаты бокса спикера из base.mjs, рамка обязана лечь ровно.
+
+    Safe-zone площадок: сверху ~120 px под UI, снизу ~250 px под подписи и кнопки.
+    Ничего смыслового за эти границы не выносим.
+  */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; background:transparent; }
+  body { font-family:'Inter','Segoe UI',Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  #stage { position:absolute; inset:0; }
+
+  /* ── Постоянные метки: прогресс ролика и бренд ── */
+  #track { position:absolute; left:60px; top:126px; width:960px; height:6px;
+           background:rgba(255,255,255,.28); border-radius:3px; overflow:hidden; }
+  #bar { height:100%; width:0; background:var(--accent); }
+  /* Плашка под брендом обязательна: белый текст на светлой стене не читался. */
+  #brand { position:absolute; left:60px; top:146px; font-size:22px; font-weight:800;
+           letter-spacing:3.5px; color:#FFFFFF; background:rgba(12,10,9,.55);
+           padding:8px 14px; border-radius:6px; }
+
+  /* ── Хук: первая плашка, обязана остановить скролл до первого слова ── */
+  #hook { position:absolute; left:60px; right:60px; top:210px; opacity:0;
+          background:var(--accent); color:#FFFFFF; padding:26px 34px; border-radius:8px;
+          font-size:58px; font-weight:900; line-height:1.02; letter-spacing:-1.5px;
+          text-transform:uppercase; box-shadow:0 18px 50px rgba(0,0,0,.4);
+          will-change:transform,opacity; }
+
+  /* ── Караоке: одна плашка с фразой, текущее слово подсвечено ── */
+  #cap { position:absolute; left:60px; right:60px; opacity:0; display:flex; justify-content:center;
+         will-change:transform,opacity; }
+  #capBox { background:#FFFFFF; border-radius:20px; padding:20px 26px; max-width:940px;
+            box-shadow:0 14px 40px rgba(0,0,0,.32); text-align:center; }
+  .wd { display:inline-block; font-size:52px; font-weight:800; color:#12100E; line-height:1.12;
+        letter-spacing:-1px; padding:2px 8px; border-radius:10px; }
+  .wd.key { color:var(--accent); }
+  .wd.now { background:var(--accent); color:#FFFFFF; }
+  .wd.now.key { background:#12100E; color:#FFFFFF; }
+
+  /* ── Рамка бокса спикера в боксовой сцене ── */
+  #frame { position:absolute; opacity:0;
+           box-shadow:0 0 0 7px #FFFFFF, 0 34px 70px rgba(0,0,0,.45); border-radius:2px; }
+
+  /* ── Контент-зона под боксом: пруфы и титры ──
+     Верх зоны заходит на нижний край бокса: наслоение читается как продуманная
+     композиция, а идеально разложенные по сетке блоки — как шаблон. */
+  .zone { position:absolute; left:60px; right:60px; top:1120px; height:400px; }
+
+  /* Веер реальных работ: пруф обязан подтверждать сказанное, а не описывать его словами. */
+  .fan { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; }
+  .fan img { width:290px; height:340px; object-fit:cover; border-radius:10px;
+             box-shadow:0 20px 44px rgba(0,0,0,.42); border:6px solid #FFFFFF;
+             margin:0 -18px; opacity:0; will-change:transform,opacity; }
+  /* Подпись пруфа — акцентный шильдик под веером, в габаритах зоны: в прогоне v3 она
+     висела ниже и её накрывала плашка субтитров. */
+  .fanCap { position:absolute; left:50%; bottom:2px; transform:translateX(-50%);
+            font-size:26px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+            color:#FFFFFF; background:var(--accent); padding:7px 16px; border-radius:6px;
+            white-space:nowrap; }
+
+  /* Титр-карточка: кульминация фразы уходит в крупный текст, а не тонет в речи. */
+  .card { position:absolute; left:0; right:0; top:20px; opacity:0; background:#F7F4EC;
+          border-radius:22px; padding:40px 44px; box-shadow:0 26px 60px rgba(0,0,0,.4);
+          will-change:transform,opacity; }
+  .card h1 { font-size:92px; font-weight:900; color:#12100E; letter-spacing:-3px; line-height:.94;
+             text-transform:uppercase; }
+  .card .rule { height:9px; background:var(--accent); margin-top:22px; width:0; }
+  .card .sub { font-size:32px; color:#5A5652; font-weight:600; margin-top:18px; }
+
+  /* ── Финал: резкий CTA-кадр, обещание хука закрывается текстом ── */
+  #cta { position:absolute; inset:0; opacity:0; background:rgba(10,9,8,.86);
+         display:flex; flex-direction:column; justify-content:center; padding:0 80px; }
+  #cta h1 { font-size:104px; font-weight:900; color:#FFFFFF; letter-spacing:-4px; line-height:.94;
+            text-transform:uppercase; }
+  #cta .rule { height:11px; background:var(--accent); margin:34px 0 30px; width:0; }
+  #cta .sub { font-size:38px; color:#D9D4CC; font-weight:600; line-height:1.3; }
+  #cta .mark { position:absolute; left:80px; bottom:300px; font-size:26px; font-weight:800;
+               letter-spacing:4px; color:var(--accent); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="track"><div id="bar"></div></div>
+  <div id="brand">{{BRAND}}</div>
+  <div id="hook"></div>
+  <div id="frame"></div>
+  <div id="cap"><div id="capBox"></div></div>
+  <div id="cta"><h1></h1><div class="rule"></div><div class="sub"></div><div class="mark">{{BRAND}}</div></div>
+</div>
+
+<script>
+  const FPS = {{FPS}};
+  const ACCENT = "{{ACCENT}}";
+  const DURATION = {{DURATION}};
+  const BOX = {{BOX}};
+  const PHRASES = {{PHRASES}};      // [{t0,t1,words:[{w,s,e,key}]}]
+  const HOOK = {{HOOK}};            // {text,t1} | null
+  const BOXES = {{BOXES}};          // [{t0,t1}] окна боксовых сцен — под ними рамка
+  const PROOFS = {{PROOFS}};        // [{t0,t1,images:[src],caption}]
+  const CARDS = {{CARDS}};          // [{t0,t1,title,sub}]
+  const CTA = {{CTA}};              // {t0,title,sub} | null
+
+  document.documentElement.style.setProperty('--accent', ACCENT);
+
+  const stage = document.getElementById('stage');
+  const capEl = document.getElementById('cap');
+  const capBox = document.getElementById('capBox');
+  const hookEl = document.getElementById('hook');
+  const frameEl = document.getElementById('frame');
+  const ctaEl = document.getElementById('cta');
+
+  if (HOOK) hookEl.textContent = HOOK.text;
+  if (CTA) {
+    ctaEl.querySelector('h1').textContent = CTA.title;
+    ctaEl.querySelector('.sub').textContent = CTA.sub || '';
+  }
+
+  frameEl.style.left = BOX.x + 'px';
+  frameEl.style.top = BOX.y + 'px';
+  frameEl.style.width = BOX.w + 'px';
+  frameEl.style.height = BOX.h + 'px';
+
+  // Пруфы и титры живут в одной зоне под боксом. Элементы создаются один раз —
+  // дальше кадр определяется только стилями, иначе рендер перестанет быть детерминированным.
+  const proofEls = PROOFS.map((p) => {
+    const zone = document.createElement('div');
+    zone.className = 'zone';
+    const fan = document.createElement('div');
+    fan.className = 'fan';
+    const imgs = p.images.map((src, i) => {
+      const img = document.createElement('img');
+      img.src = src;
+      // Небольшой разворот: веер снимков читается как физическая раскладка, не как грид.
+      img.dataset.rot = String(-7 + i * 7);
+      fan.appendChild(img);
+      return img;
+    });
+    if (p.caption) {
+      const cap = document.createElement('div');
+      cap.className = 'fanCap';
+      cap.textContent = p.caption;
+      fan.appendChild(cap);
+    }
+    zone.appendChild(fan);
+    stage.appendChild(zone);
+    return { zone, imgs };
+  });
+
+  const cardEls = CARDS.map((c) => {
+    const zone = document.createElement('div');
+    zone.className = 'zone';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<h1></h1><div class="rule"></div>' + (c.sub ? '<div class="sub"></div>' : '');
+    card.querySelector('h1').textContent = c.title;
+    if (c.sub) card.querySelector('.sub').textContent = c.sub;
+    zone.appendChild(card);
+    stage.appendChild(zone);
+    return card;
+  });
+
+  const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
+  const easeOutBack = (x) => { const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+  // Единственная точка истины по кадру: Playwright дёргает её перед каждым скриншотом.
+  window._seekFrame = function (n) {
+    const t = n / FPS;
+
+    document.getElementById('bar').style.width = (100 * clamp01(t / DURATION)) + '%';
+
+    // ── хук ──
+    if (HOOK) {
+      const k = clamp01(t / 0.3);
+      const out = t > HOOK.t1 - 0.25 ? clamp01((t - (HOOK.t1 - 0.25)) / 0.25) : 0;
+      hookEl.style.opacity = t > HOOK.t1 ? '0' : String((1 - out) * k);
+      hookEl.style.transform = 'translateY(' + (-40 * (1 - easeOutBack(k)) - 30 * out) + 'px)';
+    }
+
+    // ── боксовая сцена: рамка ──
+    const box = BOXES.find((b) => t >= b.t0 && t <= b.t1);
+    const inBox = Boolean(box);
+    // В боксовой сцене штамп бренда пришёлся бы на саму картинку и читался бы как
+    // водяной знак — на это время он уходит, бренд несут рамка, шильдик пруфа и финал.
+    document.getElementById('brand').style.opacity = inBox ? '0' : '1';
+    if (box) {
+      const k = clamp01((t - box.t0) / 0.25);
+      const out = t > box.t1 - 0.2 ? clamp01((t - (box.t1 - 0.2)) / 0.2) : 0;
+      frameEl.style.opacity = String((1 - out) * k);
+    } else {
+      frameEl.style.opacity = '0';
+    }
+
+    // ── пруфы: снимки въезжают по очереди ──
+    PROOFS.forEach((p, i) => {
+      const { zone, imgs } = proofEls[i];
+      const on = t >= p.t0 && t <= p.t1;
+      zone.style.opacity = on ? '1' : '0';
+      if (!on) return;
+      imgs.forEach((img, k) => {
+        const kk = clamp01((t - p.t0 - k * 0.11) / 0.34);
+        const outK = t > p.t1 - 0.22 ? clamp01((t - (p.t1 - 0.22)) / 0.22) : 0;
+        img.style.opacity = String((1 - outK) * kk);
+        img.style.transform = 'translateY(' + (70 * (1 - easeOutCubic(kk))) + 'px) '
+          + 'rotate(' + (Number(img.dataset.rot) * easeOutCubic(kk)) + 'deg) '
+          + 'scale(' + (0.9 + 0.1 * easeOutCubic(kk)) + ')';
+      });
+    });
+
+    // ── титры-карточки ──
+    CARDS.forEach((c, i) => {
+      const el = cardEls[i];
+      if (t < c.t0 || t > c.t1) { el.style.opacity = '0'; return; }
+      const k = clamp01((t - c.t0) / 0.32);
+      const out = t > c.t1 - 0.24 ? clamp01((t - (c.t1 - 0.24)) / 0.24) : 0;
+      el.style.opacity = String((1 - out) * Math.min(1, k * 1.4));
+      el.style.transform = 'translateY(' + (56 * (1 - easeOutCubic(k)) - 34 * out) + 'px)';
+      const rule = el.querySelector('.rule');
+      if (rule) rule.style.width = Math.round(100 * easeOutCubic(k)) + '%';
+    });
+
+    // ── караоке ──
+    const ctaOn = CTA && t >= CTA.t0;
+    const hookOn = HOOK && t < HOOK.t1;
+    const ph = (ctaOn || hookOn) ? null : PHRASES.find((p) => t >= p.t0 && t < p.t1 + 0.12);
+    if (ph) {
+      capBox.innerHTML = ph.words.map((w) => {
+        const now = t >= w.s && t < w.e;
+        return '<span class="wd' + (w.key ? ' key' : '') + (now ? ' now' : '') + '">' + w.w + '</span>';
+      }).join(' ');
+      // В боксовой сцене плашка садится в самый низ: контент-зона занята пруфом.
+      capEl.style.bottom = (inBox ? 268 : 430) + 'px';
+      const k = clamp01((t - ph.t0) / 0.18);
+      capEl.style.opacity = String(Math.min(1, k * 1.8));
+      capEl.style.transform = 'scale(' + (0.9 + 0.1 * easeOutBack(k)) + ')';
+    } else {
+      capEl.style.opacity = '0';
+    }
+
+    // ── финальный кадр ──
+    if (CTA) {
+      const k = clamp01((t - CTA.t0) / 0.28);
+      ctaEl.style.opacity = t < CTA.t0 ? '0' : String(k);
+      const rule = ctaEl.querySelector('.rule');
+      if (rule) rule.style.width = Math.round(70 * easeOutCubic(k)) + '%';
+    }
+  };
+
+  window._seekFrame(0);
+</script>
+</body>
+</html>

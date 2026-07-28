@@ -1,0 +1,18 @@
+{
+  "name": "ikigai-content-factory-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Движок контент-фабрики IKIGAI PROMOTION: монтаж Reels на своей машине",
+  "type": "module",
+  "scripts": {
+    "check": "node reels/check-deps.mjs",
+    "demo": "node reels/montage/run.mjs demo/demo.config.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "playwright": "^1.47.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
