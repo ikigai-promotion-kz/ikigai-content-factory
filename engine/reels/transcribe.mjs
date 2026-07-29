@@ -129,7 +129,7 @@ export async function transcribe(srcPath, opts = {}) {
 function round3(x) { return Math.round(Number(x) * 1000) / 1000; }
 function log(msg) { console.log(`[расшифровка] ${msg}`); }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [, , srcArg, langArg] = process.argv;
   if (!srcArg) {
     console.error('Использование: node reels/transcribe.mjs <видео> [язык]');

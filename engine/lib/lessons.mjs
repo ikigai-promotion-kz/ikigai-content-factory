@@ -182,7 +182,7 @@ function arg(flag) {
   return i > -1 ? process.argv[i + 1] : undefined;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [, , cmd, ...rest] = process.argv;
   const positional = rest.filter((a, i) => !a.startsWith('--') && !rest[i - 1]?.startsWith('--'));
   const tags = (arg('--tags') || '').split(',').map((t) => t.trim()).filter(Boolean);

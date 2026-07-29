@@ -1,16 +1,20 @@
 /**
- * genimage.js — единый headless generation-client (fal.ai) для generation-first рендера.
+ * genimage.mjs — генерация слайдов и баннеров через fal.ai.
  *
- * Отличие от renderers/falai.js (фон-only): этот клиент рождает ВЕСЬ слайд целиком
- * (сцена + опц. вшитый текст) и поддерживает continuity-референс — хук генерится
- * первым, его image_url становится reference для остальных слайдов «одного мира».
+ * Рисует ВЕСЬ слайд целиком одним промптом: сцена и текст сразу вместе.
+ * Собирать «фон отдельно, надпись сверху» мы пробовали — коллаж видно сразу,
+ * поэтому этот путь у нас закрыт.
  *
- * Модели (роутинг по engine делает renderers/generative.js):
- *   - fal-ai/nano-banana        — text2image (по умолчанию)
- *   - fal-ai/nano-banana/edit   — reference/continuity (принимает image_urls)
+ * Держит единый мир в серии: сгенерируйте первый слайд, примите его и подавайте
+ * якорем (`--ref`) в остальные. Без якоря в серии разъезжаются свет, палитра и лица.
  *
- * REST: https://queue.fal.run/{model_id} (submit → poll → download).
- * Паттерн poll/download заимствован из renderers/falai.js (DRY).
+ * Модель выбирается под задачу — список в config/models.json, подсказка в справке.
+ *
+ * Командная строка:
+ *   node lib/genimage.mjs "<промпт>" --out ./out/1.png --ratio 4:5 --model nano-banana-pro
+ *   node lib/genimage.mjs "<промпт>" --out ./out/2.png --ref ./out/1.png
+ *
+ * Тратит деньги с баланса fal.ai. Нужен FAL_KEY в engine/.env.
  */
 
 import { writeFile } from 'node:fs/promises';
@@ -166,7 +170,7 @@ function arg(flag, fallback) {
   return i > -1 ? process.argv[i + 1] : fallback;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const dotenv = await import('dotenv');
   dotenv.default.config({ path: path.join(ROOT, '.env') });
 

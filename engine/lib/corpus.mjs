@@ -70,7 +70,7 @@ export async function buildArtCorpus(query) {
   ]);
 
   const parts = [
-    '# КОРПУС ЗНАНИЙ ФАБРИКИ (retrieval под тему — выбирай отсюда и фиксируй выбор в meta.knowledge_refs)',
+    '# ЗНАНИЯ ФАБРИКИ ПОД ЭТУ ТЕМУ (выбирай отсюда и называй, что выбрал)',
     '',
     '## ДИЗАЙН-СИСТЕМА (свод разбора 1404 референсов — планка и границы)',
     design.gapsb,
@@ -81,7 +81,7 @@ export async function buildArtCorpus(query) {
     design.color,
     '',
     ...(axes ? ['## ОСИ ДИЗАЙНА (собери визуал по 9 осям; следи за перекосом медиум/композиция)', axes, ''] : []),
-    '## ФОРМАТЫ СЛАЙДОВ (слой МЕТОДА: дословные промпт-скелеты; выбирай под роль слайда и awareness)',
+    '## ФОРМАТЫ СЛАЙДОВ (роль слайда в карусели — выбирай под задачу, не под красоту)',
     formats.table,
     ...formats.cards,
     '',
@@ -106,7 +106,7 @@ export async function buildStoryCorpus(query) {
   ]);
 
   const parts = [
-    '# КОРПУС ЗНАНИЙ ФАБРИКИ (проектируй карусель под сохранения/репосты/комменты)',
+    '# ЗНАНИЯ ФАБРИКИ ПОД СМЫСЛ (проектируй под сохранения, репосты и комментарии)',
     '',
     design.gapsb,
     design.structure,
@@ -134,7 +134,7 @@ export async function buildVideoCorpus(query) {
   ]);
 
   const parts = [
-    '# КОРПУС ЗНАНИЙ ФАБРИКИ — ВИДЕО (выбирай отсюда и фиксируй выбор в knowledge_refs)',
+    '# ЗНАНИЯ ФАБРИКИ ПОД ВИДЕО (выбирай отсюда и называй, что выбрал)',
     '',
     '## ДИЗАЙН-ЯКОРЯ (планка и границы — общие с карусельными)',
     design.gapsb,
@@ -426,7 +426,7 @@ const BUILDERS = {
   video: buildVideoCorpus, // ролик: движение, монтаж, шоты
 };
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [, , mode, ...rest] = process.argv;
   const query = rest.join(' ').trim();
 

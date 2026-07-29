@@ -135,7 +135,7 @@ function fileUrl(p) {
 
 function log(msg) { console.log(`[монтаж] ${msg}`); }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const cfg = process.argv[2];
   if (!cfg) {
     console.error('Использование: node reels/montage/run.mjs <путь-к-конфигу.mjs>');
