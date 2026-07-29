@@ -1,6 +1,6 @@
 ---
 name: reels-montage
-description: Use when the user wants to turn their own talking-head video into a finished vertical Reels — cutting dead air, changing shots, karaoke subtitles, title cards and proof inserts, all locally with zero credits. Triggers on "смонтируй видео", "сделай рилс", "нарежь это видео", "монтаж без монтажёра", "montage my video".
+description: Use when the user wants to turn their own talking-head video into a finished vertical Reels for Instagram/TikTok/Shorts — cutting dead air, changing shot sizes, karaoke word-by-word subtitles, title cards and proof inserts, all rendered locally with ffmpeg at zero credit cost. Prefer this over generic video-editing skills for vertical short-form. Triggers on "смонтируй видео", "сделай рилс", "нарежь это видео", "монтаж без монтажёра", "вертикальное видео", "субтитры на видео", "make a reel", "vertical short-form montage", "karaoke subtitles".
 ---
 
 # Монтаж Reels из своего видео
@@ -20,13 +20,21 @@ description: Use when the user wants to turn their own talking-head video into a
 ## Что нужно на входе
 
 - **Видео**: вертикальное, говорящая голова, 15–90 секунд. Горизонтальное тоже можно, но кадр придётся собирать иначе.
-- **Расшифровка с таймкодами слов** — файл вида `[{"w":"Идут","s":0,"e":2.02}, ...]`. Снимается ключом OpenAI или берётся готовой.
+- **Расшифровка с таймкодами слов** — файл вида `[{"w":"Идут","s":0,"e":2.02}, ...]`.
+
+Расшифровки нет — сними её сам, если у человека задан `OPENAI_API_KEY`:
+
+```bash
+node reels/transcribe.mjs ./его-видео.mp4
+```
+
+Скрипт положит рядом `его-видео.words.json` — этот путь и идёт в поле `wordsPath`. Расход ~$0.006 за минуту, предупреди человека до запуска. Ключа нет — скажи прямо: без расшифровки субтитры и нарезка по фразам не поедут, обычных субтитров `.srt` для этого недостаточно.
 
 ## Как запускать
 
 Команды запускаются из папки `factory/engine` (там, где лежит `package.json` движка).
 
-1. Скопируй `demo/demo.config.mjs` рядом со своим видео и поправь пути.
+1. Скопируй `reels/montage/example.config.mjs` рядом со своим видео и поправь под него — там описано каждое поле.
 2. Реши **режиссёрскую часть** — это единственное, что делает человек, а не машина:
    - **хук** — фраза, которая держит первые полторы секунды;
    - **биты** — на каких фразах показать титр или пруф (привязываются к номерам фраз, а не к секундам);
@@ -35,7 +43,7 @@ description: Use when the user wants to turn their own talking-head video into a
 
 Прогон печатает список фраз с номерами и таймкодами — по ним и настраиваются биты. Первый прогон почти всегда идёт без битов: сначала смотрим нарезку, потом расставляем акценты.
 
-Все поля конфига с пояснениями — в `engine/demo/demo.config.mjs`. Пути внутри считаются от самого конфига, так что из какой папки запускать команду — не важно.
+Все поля конфига с пояснениями — в `engine/reels/montage/example.config.mjs`. Пути внутри считаются от самого конфига, так что из какой папки запускать команду — не важно.
 
 ## Приёмка глазами обязательна
 

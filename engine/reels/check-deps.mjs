@@ -11,10 +11,15 @@
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
 import { resolveBin } from './lib/bin.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));   // папка engine/
 const WIN = process.platform === 'win32';
+
+// Ключи лежат в engine/.env. Путь считаем от самого скрипта, а не от папки запуска:
+// иначе один лишний `cd` — и проверка врёт, что ключей нет, хотя они на месте.
+dotenv.config({ path: path.join(ROOT, '.env') });
 
 /** Без этого монтаж не поедет. */
 const REQUIRED = {

@@ -21,3 +21,8 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Мусор, который роняют сюда сторонние инструменты. Один раз уже уехал в публичный
+# репозиторий: dotnet-suggest от Git Credential Manager насыпал сюда свой трейс.
+system-commandline-sentinel-files/
+*.log

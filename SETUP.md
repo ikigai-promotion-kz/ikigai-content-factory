@@ -70,13 +70,14 @@ xcode-select --install
 
 1. Склонируй репозиторий https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory
 2. Прочитай файл factory/plugins/content-factory/skills/factory-setup/SKILL.md и дальше действуй строго по нему
-3. Скопируй обе папки скиллов из factory/plugins/content-factory/skills/ в папку .claude/skills/ этого проекта — чтобы дальше я мог вызывать их через «/»
+3. Скопируй обе папки скиллов из factory/plugins/content-factory/skills/ в папку .claude/skills/ этого проекта — чтобы фабрика была доступна в этой рабочей папке
+4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне рабочей папки и помоги мне его заполнить: спрашивай по одному пункту, не всю анкету сразу
 
 Я не программист. Объясняй каждый шаг простыми словами, спрашивай разрешение перед установкой программ и не проси меня вводить команды в терминал самому.
 В конце обязательно: прогони проверку окружения, смонтируй демо-ролик и открой готовый файл, чтобы я его посмотрел.
 ```
 
-Необязательно: комплект оформлен и как плагин. Чтобы скиллы были доступны во всех проектах — в приложении кнопка **+ → Plugins → Add plugin**, маркетплейс `ikigai-promotion-kz/ikigai-content-factory`. В терминальной версии: `/plugin marketplace add ikigai-promotion-kz/ikigai-content-factory`.
+**Чтобы фабрика работала во всех проектах, а не только в этой папке**, поставьте её ещё и плагином: в приложении кнопка **+ → Plugins → Add plugin**, маркетплейс `ikigai-promotion-kz/ikigai-content-factory`. В терминальной версии: `/plugin marketplace add ikigai-promotion-kz/ikigai-content-factory`. Настройки у приложения и терминальной версии общие — ставится один раз.
 
 ## Шаг 6. Higgsfield (картинки и видео)
 
@@ -92,10 +93,11 @@ xcode-select --install
 2. Вставьте в чат:
 
 ```
-Подключи fal.ai. Создай в корне рабочей папки файл .mcp.json с сервером fal:
-type http, url https://mcp.fal.ai/mcp, заголовок Authorization: Bearer <мой ключ>.
-Ключ я вставлю сам — оставь на его месте заглушку и покажи, какую строку заменить.
+Подключи fal.ai. Скопируй factory/.mcp.json.example в .mcp.json в корне рабочей папки —
+там уже прописан сервер fal, нужно только подставить ключ.
+Ключ я вставлю сам — покажи мне полный путь к файлу и строку, которую заменить.
 Тот же ключ добавь в factory/engine/.env как FAL_KEY.
+Проверь, что .env и .mcp.json попадают в .gitignore.
 ```
 
 Ключ никому не показывайте и замазывайте на скриншотах.
@@ -103,6 +105,12 @@ type http, url https://mcp.fal.ai/mcp, заголовок Authorization: Bearer 
 ## Шаг 8. Ключ OpenAI (расшифровка речи)
 
 `platform.openai.com` → API keys → создать ключ `sk-...` → пополнить баланс на $5 → вписать в `factory/engine/.env` как `OPENAI_API_KEY`.
+
+Ключ нужен для расшифровки речи — из неё берутся субтитры и нарезка по фразам:
+
+```bash
+node reels/transcribe.mjs ./моё-видео.mp4
+```
 
 ## Шаг 9. Финальная проверка
 

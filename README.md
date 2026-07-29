@@ -10,6 +10,8 @@
 | `engine/reels/montage/` | Монтажный слой: вырезка пауз, каты по фразам, субтитры, титры, пруфы |
 | `engine/demo/` | Демо-видео и конфиг — чтобы проверить, что всё встало правильно |
 | `engine/knowledge/` | Теория монтажа и словарь планов, на которые опирается фабрика |
+| `CLAUDE.md.template` | Правила вашего проекта: бренд, голос, стоп-слова. Переименуйте в `CLAUDE.md` |
+| `.mcp.json.example` | Образец подключения fal.ai — скопируйте в `.mcp.json` корня рабочей папки |
 
 ## Установка
 
@@ -27,12 +29,28 @@
 1. Склонируй https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory
 2. Прочитай factory/plugins/content-factory/skills/factory-setup/SKILL.md и действуй строго по нему
 3. Скопируй обе папки скиллов из factory/plugins/content-factory/skills/ в .claude/skills/ этого проекта
+4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне рабочей папки и помоги мне его заполнить
 
 Объясняй каждый шаг простыми словами и спрашивай разрешение перед установкой программ.
 В конце прогони проверку и покажи мне готовый ролик.
 ```
 
-Комплект оформлен и как **плагин** — если хочешь, чтобы скиллы фабрики были доступны во всех проектах, добавь маркетплейс `ikigai-promotion-kz/ikigai-content-factory`: в приложении Claude кнопкой **+ → Plugins → Add plugin**, в терминальной версии командой `/plugin marketplace add ikigai-promotion-kz/ikigai-content-factory`. Это удобство, а не условие работы.
+### Чтобы фабрика была видна во всех проектах
+
+Промпт выше кладёт скиллы в `.claude/skills/` **этой рабочей папки** — в другой папке их не будет. Хотите пользоваться фабрикой везде (в том числе из терминальной версии Claude Code, открытой на другом проекте) — поставьте комплект **плагином**:
+
+- в приложении Claude: кнопка **+** рядом с полем ввода → **Plugins** → **Add plugin**, маркетплейс `ikigai-promotion-kz/ikigai-content-factory`;
+- в терминальной версии: `/plugin marketplace add ikigai-promotion-kz/ikigai-content-factory`.
+
+Приложение и терминальная версия — один движок с общими настройками, так что ставить нужно один раз.
+
+### Своё видео
+
+```bash
+node reels/transcribe.mjs ./my-video.mp4        # расшифровка с таймкодами слов (нужен ключ OpenAI)
+cp reels/montage/example.config.mjs my.config.mjs   # образец конфига, каждое поле описано
+node reels/montage/run.mjs my.config.mjs
+```
 
 ## Что нужно на машине
 
