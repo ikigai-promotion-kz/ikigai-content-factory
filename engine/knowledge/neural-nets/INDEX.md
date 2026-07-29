@@ -1,7 +1,7 @@
 <!-- синтез neural-nets-research 2026-07-11 из N01–N09 (8 файлов); ground-truth: _SEED-mcp-catalog.md -->
 # neural-nets — INDEX (оглавление + карта интеграции)
 
-> **Назначение:** входная точка в базу знаний по нейросетям генерации (image/video/audio + Supercomputer/скиллы/промптинг) для движка `carousel-engine`. Оглавление 8 файлов, карта «куда что встраивается» и ответы одной строкой на 3 вопроса основателя.
+> **Назначение:** входная точка в базу знаний по нейросетям генерации (image/video/audio + Supercomputer/скиллы/промптинг) для движка `carousel-engine`. Оглавление 9 файлов, карта «куда что встраивается» и ответы одной строкой на 3 вопроса основателя.
 > **Как использует движок:** навигатор по reference-слою. Runtime-подключения нет — `lib/corpus.js` эти файлы пока НЕ читает, движок остаётся fal-first + прямые вызовы `mcp__higgsfield__*`. Порядок подключения к движку — в разделе «Карта интеграции».
 > **Дата:** 2026-07-11 · **Источник:** higgsfield.ai + офиц. доки + _SEED-mcp-catalog.md
 
@@ -17,7 +17,7 @@
 
 ---
 
-## Оглавление (8 файлов)
+## Оглавление (9 файлов)
 
 | Файл | Модуль | Что внутри | Слой движка |
 |---|---|---|---|
@@ -29,6 +29,7 @@
 | **`supercomputer.md`** | N06 | карта Supercomputer (Orchestrator/Apps/Employees/Skills/Memory/Connectors), MCP&CLI vs наш коннектор, кредит-математика, $100K-контест | reference для `model-router` (где рендерить) |
 | **`skills-plugins.md`** | N07 | CLI-скиллы `higgsfield-ai/skills`, Cinema Studio, desktop-плагины (Figma/PS/Premiere), Marketplace (Skills/Employees/Connectors); дисциплина терминов «Skill»/«Preset» | reference выбора инструмента ПЕРЕД рендером |
 | **`frontier-landscape.md`** | N09 | вне Higgsfield (Midjourney/Ideogram/Firefly/Runway/Luma/Pika/ElevenLabs/Suno/HeyGen/Genie 3): где паритет, где пробел | reference для `art-director.md` (брифинг) + эталоны качества |
+| **`higgsfield-presets-catalog.md`** | — | живой дамп 62 `preset_id` (готовые вирусные сценарии и эффекты, а НЕ движение камеры): что применимо деловому контенту, что нет | reference для ветки «оживить слайд в клип» |
 
 Ground-truth `id`/параметров для всех — **`../research/neural-nets/_SEED-mcp-catalog.md`**. Веб = «как промптить / особенности / свежесть», не выдумывание API.
 
