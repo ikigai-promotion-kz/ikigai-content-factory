@@ -45,7 +45,7 @@
 
 1. Склонируй https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory
 2. Прочитай factory/plugins/content-factory/skills/factory-setup/SKILL.md и действуй строго по нему
-3. Скопируй обе папки скиллов из factory/plugins/content-factory/skills/ в .claude/skills/ этого проекта
+3. Скопируй ВСЕ папки скиллов (их три) из factory/plugins/content-factory/skills/ в .claude/skills/ этого проекта
 4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне рабочей папки и помоги мне его заполнить
 
 Объясняй каждый шаг простыми словами и спрашивай разрешение перед установкой программ.

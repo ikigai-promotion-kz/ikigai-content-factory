@@ -70,7 +70,7 @@ xcode-select --install
 
 1. Склонируй репозиторий https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory
 2. Прочитай файл factory/plugins/content-factory/skills/factory-setup/SKILL.md и дальше действуй строго по нему
-3. Скопируй обе папки скиллов из factory/plugins/content-factory/skills/ в папку .claude/skills/ этого проекта — чтобы фабрика была доступна в этой рабочей папке
+3. Скопируй ВСЕ папки скиллов (их три) из factory/plugins/content-factory/skills/ в папку .claude/skills/ этого проекта — чтобы фабрика была доступна в этой рабочей папке
 4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне рабочей папки и помоги мне его заполнить: спрашивай по одному пункту, не всю анкету сразу
 
 Я не программист. Объясняй каждый шаг простыми словами, спрашивай разрешение перед установкой программ и не проси меня вводить команды в терминал самому.
