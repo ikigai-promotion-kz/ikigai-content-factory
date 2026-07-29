@@ -1,0 +1,12 @@
+{
+  "_комментарий": "Кто изображён на ваших картинках. Добавляется к каждому промпту генерации. Модель игнорирует это для сцен без людей. Правьте под свою аудиторию — люди на визуале должны быть похожи на тех, кому вы продаёте.",
+  "_как_отключить": "Поставьте prompt в пустую строку — тогда модель решает сама.",
+
+  "prompt": "Casting of any people in the image: Central Asian / Kazakh appearance by default (~80%), Slavic appearance (~20%) where it fits the context and target audience; age to match the audience.",
+
+  "_примеры_под_другие_рынки": {
+    "россия_снг": "Casting: Slavic appearance by default, age and styling to match the target audience.",
+    "европа": "Casting: diverse European appearance, age and styling to match the target audience.",
+    "без_ограничений": ""
+  }
+}

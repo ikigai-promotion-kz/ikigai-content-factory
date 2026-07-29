@@ -55,7 +55,7 @@
 - [ ] Длительность 0.5–3 сек, есть reduced-motion/static fallback.
 - [ ] Скорость UI-перехода 100–500 мс ⚠ single-source (ориентир, верифицировать).
 
-_Источник: M01 → research/01-principy-dvizheniya-animacii.md_
+_Модуль M01 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -103,7 +103,7 @@ _Источник: M01 → research/01-principy-dvizheniya-animacii.md_
 ### Платформенная дифференциация (один сюжет — разный монтаж)
 **TikTok** — быстрый темп, джамп-каты, много текст-оверлеев, тренд-звук, AI-фильтры (энергия/веселье). **Reels** — плавные эстетичные переходы, slow-motion, минимум текста, упор на визуал. ⚠ single-source по сравнению темпов (верифицировать). CapCut 2026: AI one-click templates, beat sync, cinematic edits, speed ramping — ориентир для быстрой сборки вертикали.
 
-_Источник: M02 → research/02-montazh-i-ritm.md_
+_Модуль M02 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -150,7 +150,7 @@ _Источник: M02 → research/02-montazh-i-ritm.md_
 - [ ] **Reference frame extraction** — кадр из первого удачного шота как визуальный якорь для следующих.
 - [ ] **Batch generation by location** — все шоты одной локации генерируются подряд + manual review на style drift.
 
-_Источник: M03 → research/03-cvet-i-svet-v-video.md_
+_Модуль M03 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -185,7 +185,7 @@ _Источник: M03 → research/03-cvet-i-svet-v-video.md_
 ### Оригинальное аудио vs тренд-звук
 Звук на TikTok/Reels — **сигнал дистрибуции**, не украшение (алгоритм группирует видео по саунду). Тренд-звук даёт краткий буст на пике, но **оригинальное аудио** не имеет срока годности и даёт лучше brand recall. ⚠ Цифры «88% вовлечённости завязано на звук», рост охвата «×3–5» — single-source (вторичные SMM-агрегаторы; в презентациях — «индустриальный консенсус», не верифицированная TikTok-статистика). Решение native-vs-trending дифференцировать по платформе (см. M05).
 
-_Источник: M04 → research/04-zvuk-dlya-video.md_
+_Модуль M04 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -220,7 +220,7 @@ _Источник: M04 → research/04-zvuk-dlya-video.md_
 - **Shares/sends (личная пересылка) — топ-сигнал ранжирования 2026** на IG (официально) и TikTok, обошли лайки. Закладывать **DM-шер-триггер** («отправь другу, кто…») в финал ролика.
 - Photo Mode TikTok — метрика **Swipe-Through Rate**; «Search Value» (авто-субтитры + оверлеи ↔ поисковые запросы) — прямой фактор ранжирования.
 
-_Источник: M05 → research/05-platformennye-formaty-2026.md_
+_Модуль M05 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -291,7 +291,7 @@ negative: [3–5 терминов]
 - [ ] Negative prompt ≤ 5 терминов, длина 20–80 слов.
 - [ ] Промпт адаптирован под модель; кастинг KZ прописан вручную; критичный текст — overlay, не baked.
 
-_Источник: M10 → research/10-ai-video-park.md_
+_Модуль M10 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -324,7 +324,7 @@ _Источник: M10 → research/10-ai-video-park.md_
 - **`sam_3_video` / `video_background_remover`** — вырезание фона у видео (композитинг, замена фона).
 - Апскейл видео: `topaz_video` / `bytedance_video_upscale` (до 4k/2160p), `video_upscale`.
 
-_Источник: M11 → research/11-ai-enhance-i-utility.md + knowledge/neural-nets/higgsfield-tools.md_
+_Модуль M11 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -336,7 +336,7 @@ _Источник: M11 → research/11-ai-enhance-i-utility.md + knowledge/neura
 - Связанные элементы (**текст + подложка**) двигаются **одним таймингом** → читаются как группа. Не анимировать текст и фон отдельными таймингами (это разрушает common fate).
 - **Один визуальный акцент в движении** (Von Restorff): не пять конкурирующих анимированных акцентов на кадре — иначе эффект переходит в медленный последовательный поиск, теряется.
 
-_Источник: M08 → research/08-psihologiya-vizualnogo-vnimaniya.md_
+_Модуль M08 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -356,7 +356,7 @@ _Источник: M08 → research/08-psihologiya-vizualnogo-vnimaniya.md_
 ### «Слот под пересылку» в финале
 Финал ролика проектировать не как призыв в подписи, а как **встроенный в визуал элемент под пересылку** («отправь тому, кто…» — с местом называния адресата). Опирается на STEPPS (Berger): arousal (awe/гнев/восторг, **не** спокойная грусть) — главный двигатель шеринга; Practical Value → save-worthy форматы (чек-лист/фреймворк/сравнение).
 
-_Источник: M07 → research/07-triggery-rasprostraneniya.md_
+_Модуль M07 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 
@@ -389,7 +389,7 @@ Meta группирует креативы в **Entity ID** по смыслу (�
 ### Сроки усталости креатива (когда обновлять)
 TikTok ~72 часа до –50% эффективности · Meta холодный трафик 10–14 дней · Meta ретаргетинг 2–3 недели · Reels как TikTok (еженедельно) · YouTube Shorts 3–4 недели.
 
-_Источник: M12 → research/12-performance-kreativy.md_
+_Модуль M12 базы видео-ремесла IKIGAI PROMOTION_
 
 ---
 

@@ -1,0 +1,90 @@
+{
+  "_comment": "Единая точка конфигурации моделей. До 28.07.2026 модели были захардкожены в lib/genimage.js (дефолт fal-ai/nano-banana) и в роутере ENGINE_MODEL в renderers/generative.js — из-за чего интент-слуги recraft/seedream/flux молча фолбэчились на PRO, хотя реальные slug'и лежали в knowledge/fal-models-catalog.md. Теперь роутинг живёт здесь.",
+  "_rules": [
+    "Источник истины по slug'ам — https://fal.ai/docs/llms.txt, каталог меняется быстрее любого файла.",
+    "Префикс fal-ai/ есть НЕ у всех: ByteDance/Alibaba идут от имени лаборатории. Не склеивать 'fal-ai/' + model.",
+    "Название карточки != slug. Ориентир — slug.",
+    "Каждый ключ можно переопределить env-переменной из поля env, не трогая код."
+  ],
+
+  "image": {
+    "_default": "nano-banana",
+    "_pro": "nano-banana-pro",
+
+    "nano-banana": {
+      "model": "fal-ai/nano-banana",
+      "edit": "fal-ai/nano-banana/edit",
+      "env": "GEN_MODEL",
+      "intent": "быстрая вспомогательная сцена, дефолт батча"
+    },
+    "nano-banana-pro": {
+      "model": "fal-ai/gemini-3-pro-image-preview",
+      "edit": "fal-ai/gemini-3-pro-image-preview/edit",
+      "env": "GEN_MODEL_PRO",
+      "intent": "4K фотореализм, hero-сцена, богатая диаграмма, кириллица в кадре"
+    },
+    "gpt-image": {
+      "model": "fal-ai/gemini-3-pro-image-preview",
+      "env": "GEN_MODEL_GPT",
+      "intent": "текст-в-кадре: editorial/Swiss/letterpress/callout/инфографика/big-number",
+      "note": "НАСТОЯЩИЙ GPT Image 2 в headless недоступен: Higgsfield REST отдаёт 404 на все слаги (проба 07.07.2026), fal-ai/gpt-image-2 в каталоге помечен '⚠ slug'. Живёт через Higgsfield MCP в чат-режиме /creative и /carousel-day. Здесь честный фолбэк на PRO — лучший headless-контроль типографики. Подтвердится slug — меняется одна строка."
+    },
+    "recraft": {
+      "model": "fal-ai/recraft/v4/pro/text-to-image",
+      "env": "GEN_MODEL_RECRAFT",
+      "intent": "вектор, лого, иконки, плакат с чистыми линиями",
+      "note": "Slug из каталога, помечен как рабочий. До 28.07 фолбэчился на PRO."
+    },
+    "seedream": {
+      "model": "fal-ai/bytedance/seedream/v4/text-to-image",
+      "env": "GEN_MODEL_SEEDREAM",
+      "intent": "instruction-edit, визуальное рассуждение, тренд-ремикс, поток по цене",
+      "note": "Без префикса fal-ai у самой лаборатории — путь уже полный, не склеивать."
+    },
+    "flux": {
+      "model": "fal-ai/flux-2-flex",
+      "env": "GEN_MODEL_FLUX",
+      "intent": "точный prompt-adherence, HEX-точный баннер, типографика от BFL"
+    },
+    "cinema": {
+      "model": "fal-ai/nano-banana",
+      "env": "GEN_MODEL_CINEMA",
+      "intent": "кино-hero, dark-luxury, low-key атмосфера",
+      "note": "Родной бэкенд — Higgsfield Soul Cinema. На 4:5 и без ключей Higgsfield честно откатывается на fal (Soul Standard принимает только 1:1/9:16/16:9)."
+    },
+    "soul": {
+      "model": "fal-ai/nano-banana",
+      "env": "GEN_MODEL_SOUL",
+      "intent": "портрет/персонаж с узнаваемой идентичностью, сквозной герой",
+      "note": "Родной бэкенд — Higgsfield Soul ID (держит лицо без переописания)."
+    }
+  },
+
+  "video": {
+    "_default": "seedance",
+    "_comment": "Видео-роутинг заведён 28.07.2026 под Reels-конвейер. Модели живут в Higgsfield MCP; поле model — идентификатор для generate_video, а не fal-slug. Каталог: knowledge/neural-nets/higgsfield-video-models.md",
+
+    "seedance": {
+      "model": "seedance_2_0",
+      "backend": "higgsfield-mcp",
+      "duration": [4, 15],
+      "refs": { "image": 9, "video": 3, "audio": 3 },
+      "intent": "монтаж по сториборду, reference-driven лидер",
+      "note": "До 12 референсов за проход, модель сама читает роль каждого. Frame-level консистентность лиц и стиля. Основная рабочая модель Reels-монтажа."
+    },
+    "wan": {
+      "model": "wan2_6",
+      "backend": "higgsfield-mcp",
+      "duration": [5, 15],
+      "intent": "video reference & style transfer, переснять сцену сохранив перформанс референса",
+      "note": "Native audio + phoneme-level lip-sync. Самый input-dependent — слабее всех без референса."
+    },
+    "kling-edit": {
+      "model": "kling_o1_edit",
+      "backend": "higgsfield-mcp",
+      "duration": [3, 10],
+      "intent": "пост-правка готового клипа: relight, object swap, reframe, clean-up",
+      "note": "Вместо полной перегенерации. Вывод 720p."
+    }
+  }
+}

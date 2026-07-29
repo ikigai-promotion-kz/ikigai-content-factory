@@ -8,7 +8,11 @@
   "type": "module",
   "scripts": {
     "check": "node reels/check-deps.mjs",
-    "demo": "node reels/montage/run.mjs demo/demo.config.mjs"
+    "demo": "node reels/montage/run.mjs demo/demo.config.mjs",
+    "corpus": "node lib/corpus.mjs",
+    "lessons": "node lib/lessons.mjs",
+    "image": "node lib/genimage.mjs",
+    "transcribe": "node reels/transcribe.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.0",
