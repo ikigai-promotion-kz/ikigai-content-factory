@@ -103,7 +103,7 @@ for (const [rel, hint] of Object.entries(FILES)) {
 // ── Ключи: для монтажа не нужны, для генерации нужны ──
 console.log('\nКлючи (для монтажа НЕ нужны, нужны для картинок и транскрипта):');
 const KEYS = {
-  OPENAI_API_KEY: 'транскрипт видео для субтитров (~$0.006 за минуту)',
+  OPENAI_API_KEY: 'платная расшифровка речи (~$0.006 за минуту). Не обязателен — есть бесплатная: node reels/transcribe-local.mjs',
   FAL_KEY: 'генерация картинок топ-моделями',
 };
 for (const [key, what] of Object.entries(KEYS)) {

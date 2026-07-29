@@ -26,3 +26,6 @@ desktop.ini
 # репозиторий: dotnet-suggest от Git Credential Manager насыпал сюда свой трейс.
 system-commandline-sentinel-files/
 *.log
+
+# Модели распознавания речи — качаются один раз, в репозиторий не едут (0,5–1,5 ГБ)
+engine/.cache/
