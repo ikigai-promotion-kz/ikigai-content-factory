@@ -41,16 +41,22 @@
 3. Вставьте в чат:
 
 ```
-Поставь мне контент-фабрику IKIGAI PROMOTION в эту папку.
+Поставь мне контент-фабрику IKIGAI PROMOTION.
 
-1. Склонируй https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory
+МОЯ РАБОЧАЯ ПАПКА: C:\Claude\content-factory
+
+0. Сначала покажи полный путь папки, в которой ты сейчас работаешь. Не совпадает с моей рабочей папкой выше — ОСТАНОВИСЬ и скажи, как открыть нужную.
+1. Склонируй https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory внутри неё
 2. Прочитай factory/plugins/content-factory/skills/factory-setup/SKILL.md и действуй строго по нему
-3. Скопируй ВСЕ папки скиллов (их три) из factory/plugins/content-factory/skills/ в .claude/skills/ этого проекта
-4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне рабочей папки и помоги мне его заполнить
+3. Скопируй ВСЕ папки скиллов (их три) из factory/plugins/content-factory/skills/ в .claude/skills/ моей рабочей папки
+4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне моей рабочей папки и помоги мне его заполнить
 
 Объясняй каждый шаг простыми словами и спрашивай разрешение перед установкой программ.
 В конце прогони проверку и покажи мне готовый ролик.
 ```
+
+Строку с путём замените на свою. Движок ляжет в подпапку `factory`, а ваши настройки
+(`CLAUDE.md`, `.claude/skills/`, `.mcp.json`) — рядом с ней: обновление движка их не тронет.
 
 ### Чтобы фабрика была видна во всех проектах
 
