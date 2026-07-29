@@ -79,4 +79,6 @@ Claude поставит это сам, но для понимания: **Node.js
 
 ---
 
-© IKIGAI PROMOTION · Human × AI: где технологии служат смыслу
+**Автор:** Конев Сергей, со-основатель IKIGAI PROMOTION · [ikigaipromotion.kz](https://ikigaipromotion.kz)
+
+© 2026 IKIGAI PROMOTION · Human × AI: где технологии служат смыслу

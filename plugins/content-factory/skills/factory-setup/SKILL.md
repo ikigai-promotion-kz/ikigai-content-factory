@@ -1,6 +1,6 @@
 ---
 name: factory-setup
-description: Use when installing or checking the IKIGAI content factory on the user's machine — sets up Node/ffmpeg/Playwright, clones the engine, wires API keys, and proves the install by montaging a demo video. Triggers on "поставь контент-фабрику", "установи фабрику", "проверь окружение фабрики", "install content factory".
+description: Use when installing or checking the IKIGAI PROMOTION content factory on the user's machine — sets up Node/ffmpeg/Playwright, clones the engine, wires API keys, and proves the install by montaging a demo video. Triggers on "поставь контент-фабрику", "установи фабрику", "проверь окружение фабрики", "install content factory".
 ---
 
 # Установка контент-фабрики

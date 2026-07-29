@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "description": "Движок контент-фабрики IKIGAI PROMOTION: монтаж Reels на своей машине",
+  "author": "Конев Сергей <mooddesigner@gmail.com> (IKIGAI PROMOTION, https://ikigaipromotion.kz)",
+  "homepage": "https://github.com/ikigai-promotion-kz/ikigai-content-factory",
   "type": "module",
   "scripts": {
     "check": "node reels/check-deps.mjs",
