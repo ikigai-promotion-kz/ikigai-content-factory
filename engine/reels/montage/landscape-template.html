@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>
+  /*
+    Оверлей для горизонтального источника (landscape.mjs). Рисуется поверх уже
+    собранного вертикального кадра, поэтому знает его геометрию: BOX — координаты
+    бокса с видео, рамка обязана лечь ровно по ним.
+
+    Отличие от overlay-template.html: там заголовок живёт первую секунду и на это
+    время выключает субтитры, а бренд-штамп гаснет в боксовой сцене. Здесь хедер,
+    заголовок, бокс и субтитры держатся весь ролик одновременно — так устроена
+    раскладка, которую мы портируем.
+
+    Safe-zone площадок: сверху ~120 px под UI, снизу ~250 px под подписи и кнопки.
+    Ничего смыслового за эти границы не выносим.
+  */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; background:transparent; }
+  body { font-family:'Inter','Segoe UI',Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  #stage { position:absolute; inset:0; }
+
+  /* ── Градиент: затемняет верх и низ поверх размытого фона ──
+     Он здесь не для красоты. Фон собран из самого кадра источника, а кадр может быть
+     любым — светлая стена, белый интерфейс, окно. Без затемнения белый хедер и белая
+     плашка субтитров на таком фоне пропадают. Заодно это тот самый «градиент» из
+     исходной раскладки, только считается он в оверлее, где его видно и легко править. */
+  #grad { position:absolute; inset:0;
+          background:
+            linear-gradient(180deg, rgba(9,8,7,.94) 0%, rgba(9,8,7,.72) 12%, rgba(9,8,7,0) 27%),
+            linear-gradient(0deg,   rgba(9,8,7,.92) 0%, rgba(9,8,7,.62) 16%, rgba(9,8,7,0) 33%); }
+
+  /* ── Бренд-хедер ── */
+  #track { position:absolute; left:60px; top:126px; width:960px; height:5px;
+           background:rgba(255,255,255,.24); border-radius:3px; overflow:hidden; }
+  #bar { height:100%; width:0; background:var(--accent); }
+  #brand { position:absolute; left:60px; top:150px; display:flex; align-items:center; gap:12px;
+           font-size:23px; font-weight:800; letter-spacing:3.5px; color:#FFFFFF; }
+  #brand::before { content:''; width:15px; height:15px; background:var(--accent); border-radius:2px; }
+  /* Источник — правым верхним углом: чужое видео обязано быть подписано чужим именем. */
+  #source { position:absolute; right:60px; top:152px; font-size:20px; font-weight:600;
+            letter-spacing:1.6px; color:rgba(255,255,255,.62); text-transform:uppercase; }
+
+  /* ── Кликбейт-заголовок: держится весь ролик, обязан остановить скролл ──
+     Крупный белый текст на градиенте, а не плашка во всю ширину: плашка на 60 секунд
+     превращается в баннер и забирает внимание у самого видео. */
+  #head { position:absolute; left:60px; right:60px; top:216px; opacity:0;
+          font-size:62px; font-weight:900; line-height:1.06; letter-spacing:-2px;
+          text-transform:uppercase; color:#FFFFFF;
+          text-shadow:0 5px 26px rgba(0,0,0,.62); will-change:transform,opacity; }
+  #head em { font-style:normal; color:var(--accent); }
+  #headRule { position:absolute; left:60px; top:190px; height:6px; width:0; background:var(--accent); }
+
+  /* ── Рамка бокса с видео ──
+     Белый кант + тень: бокс должен читаться как вставленный кадр, а не как случайно
+     оставленные поля. Координаты приходят из landscape.mjs — те же, что у ffmpeg. */
+  #frame { position:absolute; opacity:0;
+           box-shadow:0 0 0 6px #FFFFFF, 0 32px 72px rgba(0,0,0,.55); }
+
+  /* ── Караоке: одна плашка с фразой, текущее слово подсвечено ──
+     Якорь — центр слота, а не верх: одно- и трёхстрочная плашка занимают одно место,
+     и субтитры не прыгают по кадру от фразы к фразе. */
+  #cap { position:absolute; left:60px; right:60px; opacity:0; display:flex; justify-content:center;
+         will-change:transform,opacity; }
+  #capBox { background:#FFFFFF; border-radius:20px; padding:18px 24px; max-width:940px;
+            box-shadow:0 14px 40px rgba(0,0,0,.42); text-align:center; }
+  .wd { display:inline-block; font-size:50px; font-weight:800; color:#12100E; line-height:1.12;
+        letter-spacing:-1px; padding:2px 8px; border-radius:10px; }
+  .wd.key { color:var(--accent); }
+  .wd.now { background:var(--accent); color:#FFFFFF; }
+  .wd.now.key { background:#12100E; color:#FFFFFF; }
+
+  /* ── Финал: обещание заголовка закрывается текстом ── */
+  #cta { position:absolute; inset:0; opacity:0; background:rgba(10,9,8,.88);
+         display:flex; flex-direction:column; justify-content:center; padding:0 80px; }
+  #cta h1 { font-size:100px; font-weight:900; color:#FFFFFF; letter-spacing:-4px; line-height:.94;
+            text-transform:uppercase; }
+  #cta .rule { height:11px; background:var(--accent); margin:34px 0 30px; width:0; }
+  #cta .sub { font-size:36px; color:#D9D4CC; font-weight:600; line-height:1.3; }
+  #cta .mark { position:absolute; left:80px; bottom:300px; font-size:25px; font-weight:800;
+               letter-spacing:4px; color:var(--accent); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="grad"></div>
+  <div id="frame"></div>
+  <div id="track"><div id="bar"></div></div>
+  <div id="brand">{{BRAND}}</div>
+  <div id="source">{{SOURCE}}</div>
+  <div id="headRule"></div>
+  <div id="head"></div>
+  <div id="cap"><div id="capBox"></div></div>
+  <div id="cta"><h1></h1><div class="rule"></div><div class="sub"></div><div class="mark">{{BRAND}}</div></div>
+</div>
+
+<script>
+  const FPS = {{FPS}};
+  const ACCENT = "{{ACCENT}}";
+  const DURATION = {{DURATION}};
+  const BOX = {{BOX}};              // {x,y,w,h} — бокс с видео, считан в landscape.mjs
+  const PHRASES = {{PHRASES}};      // [{t0,t1,words:[{w,s,e,key}]}] во времени смонтированного ролика
+  const HEADLINE = {{HEADLINE}};    // строка; \n — жёсткий перенос, *слово* — акцент
+  const CAP_CENTER = {{CAP_CENTER}};
+  const CTA = {{CTA}};              // {t0,title,sub} | null
+
+  document.documentElement.style.setProperty('--accent', ACCENT);
+
+  const headEl = document.getElementById('head');
+  const headRule = document.getElementById('headRule');
+  const frameEl = document.getElementById('frame');
+  const capEl = document.getElementById('cap');
+  const capBox = document.getElementById('capBox');
+  const ctaEl = document.getElementById('cta');
+
+  // Заголовок пишем через textContent по кускам, а не innerHTML целиком: текст
+  // приходит из конфига и может содержать кавычки и угловые скобки.
+  HEADLINE.split('\n').forEach((line, li) => {
+    if (li) headEl.appendChild(document.createElement('br'));
+    // Нечётные куски — то, что стояло между звёздочками: акцентное слово.
+    line.split('*').forEach((chunk, i) => {
+      if (!chunk) return;
+      if (i % 2) {
+        const em = document.createElement('em');
+        em.textContent = chunk;
+        headEl.appendChild(em);
+      } else {
+        headEl.appendChild(document.createTextNode(chunk));
+      }
+    });
+  });
+
+  frameEl.style.left = BOX.x + 'px';
+  frameEl.style.top = BOX.y + 'px';
+  frameEl.style.width = BOX.w + 'px';
+  frameEl.style.height = BOX.h + 'px';
+  capEl.style.top = CAP_CENTER + 'px';
+
+  if (CTA) {
+    ctaEl.querySelector('h1').textContent = CTA.title;
+    ctaEl.querySelector('.sub').textContent = CTA.sub || '';
+  }
+
+  const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
+  const easeOutBack = (x) => { const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+  // Единственная точка истины по кадру: Playwright дёргает её перед каждым скриншотом.
+  // Страница сама не анимируется — кадр целиком определяется номером.
+  window._seekFrame = function (n) {
+    const t = n / FPS;
+
+    document.getElementById('bar').style.width = (100 * clamp01(t / DURATION)) + '%';
+
+    // ── заголовок и рамка: въезжают в первые полсекунды и остаются ──
+    const k = clamp01(t / 0.4);
+    headEl.style.opacity = String(k);
+    headEl.style.transform = 'translateY(' + (-26 * (1 - easeOutBack(k))) + 'px)';
+    headRule.style.width = Math.round(120 * easeOutCubic(k)) + 'px';
+    frameEl.style.opacity = String(clamp01(t / 0.3));
+
+    // ── караоке ──
+    const ctaOn = CTA && t >= CTA.t0;
+    const ph = ctaOn ? null : PHRASES.find((p) => t >= p.t0 && t < p.t1 + 0.12);
+    if (ph) {
+      capBox.innerHTML = '';
+      ph.words.forEach((w, i) => {
+        const span = document.createElement('span');
+        span.className = 'wd' + (w.key ? ' key' : '') + (t >= w.s && t < w.e ? ' now' : '');
+        span.textContent = w.w;
+        if (i) capBox.appendChild(document.createTextNode(' '));
+        capBox.appendChild(span);
+      });
+      const kk = clamp01((t - ph.t0) / 0.18);
+      capEl.style.opacity = String(Math.min(1, kk * 1.8));
+      capEl.style.transform = 'translateY(-50%) scale(' + (0.92 + 0.08 * easeOutBack(kk)) + ')';
+    } else {
+      capEl.style.opacity = '0';
+      capEl.style.transform = 'translateY(-50%)';
+    }
+
+    // ── финальный кадр ──
+    if (CTA) {
+      const kc = clamp01((t - CTA.t0) / 0.28);
+      ctaEl.style.opacity = t < CTA.t0 ? '0' : String(kc);
+      const rule = ctaEl.querySelector('.rule');
+      if (rule) rule.style.width = Math.round(70 * easeOutCubic(kc)) + '%';
+    }
+  };
+
+  window._seekFrame(0);
+</script>
+</body>
+</html>
