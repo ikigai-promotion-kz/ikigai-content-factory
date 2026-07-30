@@ -20,6 +20,10 @@ export const SHOTS = {
   wide:  { z: 1.00, cx: 0.50, cy: 0.50 },
   mid:   { z: 1.10, cx: 0.50, cy: 0.42 },
   tight: { z: 1.24, cx: 0.52, cy: 0.32 },
+  // Ещё два крупных плана — чтобы акцентные фразы не выглядели одним и тем же
+  // кадром. Отличаются и зумом, и точкой кадрирования: разница должна читаться.
+  tightUp: { z: 1.32, cx: 0.50, cy: 0.24 },
+  tightSide: { z: 1.28, cx: 0.64, cy: 0.30 },
   // Лицо уходит влево — справа освобождается место под карточку/врезку.
   offL:  { z: 1.16, cx: 0.72, cy: 0.38 },
   offR:  { z: 1.16, cx: 0.28, cy: 0.38 },
@@ -37,6 +41,9 @@ export const SHOTS = {
 
 /** Порядок чередования крупностей. Соседние никогда не совпадают. */
 const CYCLE = ['tight', 'wide', 'offL', 'mid', 'drift', 'offR', 'driftUp', 'mid'];
+
+/** Крупные планы под акцентные фразы — перебираются по кругу, не повторяя подряд. */
+const ACCENTS = ['tight', 'tightUp', 'tightSide'];
 
 /**
  * Собрать монтажный лист.
@@ -77,18 +84,21 @@ export function buildEdl({ words, runs, duration, opts = {} }) {
 
   // ── 4. Шоты: по фразе, длинные делим, крупности не повторяются подряд ──
   const shots = [];
+  let accentIdx = 0;
   phrases.forEach((p, pi) => {
     const span = p.t1 - p.t0;
     const boxed = boxedPhrases.includes(pi);
+    const hasKey = p.words.some((w) => w.key);
     // Боксовая сцена не дробится: композиция кадра не должна дёргаться под пруфом.
     const parts = !boxed && span > maxShot ? Math.ceil(span / maxShot) : 1;
     for (let i = 0; i < parts; i += 1) {
       shots.push({
         t0: p.t0 + (span * i) / parts,
         t1: p.t0 + (span * (i + 1)) / parts,
-        name: boxed ? 'boxed' : pickShot(shots.length, shots.at(-1)?.name, p.words.some((w) => w.key)),
+        name: boxed ? 'boxed' : pickShot(shots.length, shots.at(-1)?.name, hasKey, accentIdx),
         phrase: pi,
       });
+      if (hasKey && !boxed) accentIdx += 1;
     }
   });
   // Первый кадр — всегда лицо крупно: правило «панель 1 = спикер-хук».
@@ -227,9 +237,20 @@ function groupPhrases(words, { maxChars }) {
   return out.map((p) => ({ ...p, t1: Math.max(p.t1, p.t0 + 0.6) }));
 }
 
-/** Крупность для шота: акцентная фраза — крупно, соседние не повторяются. */
-function pickShot(index, prevName, hasKey) {
-  if (hasKey && prevName !== 'tight') return 'tight';
+/**
+ * Крупность для шота: акцентная фраза — крупно, соседние не повторяются.
+ *
+ * `accentIdx` считает акценты отдельно от общего счётчика: иначе все акцентные
+ * фразы получали один и тот же `tight` (в принятом ролике — 5 одинаковых планов
+ * из 13, и монтаж выглядел ленивым). Теперь крупные планы чередуются между собой.
+ */
+function pickShot(index, prevName, hasKey, accentIdx = 0) {
+  if (hasKey) {
+    for (let i = 0; i < ACCENTS.length; i += 1) {
+      const name = ACCENTS[(accentIdx + i) % ACCENTS.length];
+      if (name !== prevName) return name;
+    }
+  }
   for (let i = 0; i < CYCLE.length; i += 1) {
     const name = CYCLE[(index + i) % CYCLE.length];
     if (name !== prevName) return name;
