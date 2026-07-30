@@ -7,8 +7,17 @@
     Оверлей монтажного слоя. Рисуется поверх уже смонтированной базы, поэтому знает
     её геометрию: BOX — координаты бокса спикера из base.mjs, рамка обязана лечь ровно.
 
-    Safe-zone площадок: сверху ~120 px под UI, снизу ~250 px под подписи и кнопки.
-    Ничего смыслового за эти границы не выносим.
+    Safe-zone. Числа не из документации площадок, а из боевой публикации 30.07.2026:
+    ролик выложили в Reels и посмотрели на телефоне. Оказалось хуже, чем считали.
+
+      сверху  ~200 px — шапка «Reels / Друзья» и статус-бар;
+      снизу   ~430 px — ник, подпись, прогресс-бар (было 250 — субтитр попадал
+                        ровно на строку с ником, читалось как каша);
+      справа  ~150 px — колонка кнопок: лайк, комментарий, репост, «ещё».
+                        Раньше правая граница была 60 px, и кнопки ложились
+                        поверх титров-карточек. Это видно на трёх кадрах из шести.
+
+    Ничего смыслового за эти границы не выносим. Фон и лицо — можно, текст — нет.
   */
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:1080px; height:1920px; overflow:hidden; background:transparent; }
@@ -25,14 +34,14 @@
            padding:8px 14px; border-radius:6px; }
 
   /* ── Хук: первая плашка, обязана остановить скролл до первого слова ── */
-  #hook { position:absolute; left:60px; right:60px; top:210px; opacity:0;
+  #hook { position:absolute; left:60px; right:150px; top:210px; opacity:0;
           background:var(--accent); color:#FFFFFF; padding:26px 34px; border-radius:8px;
           font-size:58px; font-weight:900; line-height:1.02; letter-spacing:-1.5px;
           text-transform:uppercase; box-shadow:0 18px 50px rgba(0,0,0,.4);
           will-change:transform,opacity; }
 
   /* ── Караоке: одна плашка с фразой, текущее слово подсвечено ── */
-  #cap { position:absolute; left:60px; right:60px; opacity:0; display:flex; justify-content:center;
+  #cap { position:absolute; left:60px; right:150px; opacity:0; display:flex; justify-content:center;
          will-change:transform,opacity; }
   #capBox { background:#FFFFFF; border-radius:20px; padding:20px 26px; max-width:940px;
             box-shadow:0 14px 40px rgba(0,0,0,.32); text-align:center; }
@@ -49,7 +58,7 @@
   /* ── Контент-зона под боксом: пруфы и титры ──
      Верх зоны заходит на нижний край бокса: наслоение читается как продуманная
      композиция, а идеально разложенные по сетке блоки — как шаблон. */
-  .zone { position:absolute; left:60px; right:60px; top:1120px; height:400px; }
+  .zone { position:absolute; left:60px; right:150px; top:1060px; height:340px; }
 
   /* Веер реальных работ: пруф обязан подтверждать сказанное, а не описывать его словами. */
   .fan { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; }
@@ -228,14 +237,19 @@
     // ── караоке ──
     const ctaOn = CTA && t >= CTA.t0;
     const hookOn = HOOK && t < HOOK.t1;
-    const ph = (ctaOn || hookOn) ? null : PHRASES.find((p) => t >= p.t0 && t < p.t1 + 0.12);
+    // Титр-карточка глушит субтитр так же, как хук и финал. Карточка ставится на
+    // кульминацию фразы и несёт тот же смысл крупным текстом — показывать оба разом
+    // значит написать одно и то же дважды, друг на друга. Поймано публикацией 30.07:
+    // после подъёма субтитров из зоны ника они наехали на карточку.
+    const cardOn = CARDS.some((c) => t >= c.t0 && t < c.t1);
+    const ph = (ctaOn || hookOn || cardOn) ? null : PHRASES.find((p) => t >= p.t0 && t < p.t1 + 0.12);
     if (ph) {
       capBox.innerHTML = ph.words.map((w) => {
         const now = t >= w.s && t < w.e;
         return '<span class="wd' + (w.key ? ' key' : '') + (now ? ' now' : '') + '">' + w.w + '</span>';
       }).join(' ');
       // В боксовой сцене плашка садится в самый низ: контент-зона занята пруфом.
-      capEl.style.bottom = (inBox ? 268 : 430) + 'px';
+      capEl.style.bottom = 440 + 'px';
       const k = clamp01((t - ph.t0) / 0.18);
       capEl.style.opacity = String(Math.min(1, k * 1.8));
       capEl.style.transform = 'scale(' + (0.9 + 0.1 * easeOutBack(k)) + ')';

@@ -113,8 +113,39 @@ export async function generateImage(prompt, opts) {
   const imgRes = await fetch(imageUrl);
   if (!imgRes.ok) throw new Error(`Не скачать ${imageUrl}: ${imgRes.status}`);
   await writeFile(opts.outPath, Buffer.from(await imgRes.arrayBuffer()));
+  await normalizeToAspect(opts.outPath, aspectRatio);
 
   return { path: opts.outPath, image_url: imageUrl, model };
+}
+
+// Точные размеры площадок. Модели отдают свой родной бакет: на «4:5» приходит
+// 928×1160, и Instagram растягивает его сам — заголовок теряет резкость там, где
+// он и должен быть острым. Приводим к точному размеру локально, это бесплатно.
+const ASPECT_DIMS = {
+  '4:5':  { w: 1080, h: 1350 },
+  '9:16': { w: 1080, h: 1920 },
+  '1:1':  { w: 1080, h: 1080 },
+  '16:9': { w: 1920, h: 1080 },
+};
+
+async function normalizeToAspect(pngPath, aspect) {
+  const dims = ASPECT_DIMS[aspect];
+  if (!dims) return;
+  const { runBin } = await import('../reels/lib/bin.mjs');
+  const tmp = pngPath.replace(/\.png$/i, '.norm.png');
+  const { rename, unlink } = await import('node:fs/promises');
+  try {
+    // scale+crop, а не растяжение: пропорция уже верная, меняется только плотность пикселей.
+    await runBin('ffmpeg', [
+      '-y', '-loglevel', 'error', '-i', pngPath,
+      '-vf', `scale=${dims.w}:${dims.h}:force_original_aspect_ratio=increase,crop=${dims.w}:${dims.h}`,
+      tmp,
+    ]);
+    await rename(tmp, pngPath);
+  } catch {
+    // ffmpeg не нашёлся — отдаём как есть, это не повод терять готовый кадр.
+    try { await unlink(tmp); } catch { /* нечего убирать */ }
+  }
 }
 
 async function uploadToFal(localPath, apiKey) {

@@ -198,11 +198,44 @@ async function ensureModel(spec) {
   const res = await fetch(MODEL_URL(spec.file));
   if (!res.ok || !res.body) throw new Error(`Не удалось скачать модель: ${res.status} ${res.statusText}`);
   const tmp = `${dest}.part`;
-  await pipeline(res.body, createWriteStream(tmp));
+  // Молчаливая закачка полугигабайта неотличима от зависшей программы — особенно
+  // когда её впервые запускают при людях. Поэтому считаем мегабайты вслух.
+  const total = Number(res.headers.get('content-length')) || 0;
+  let got = 0;
+  let lastShown = 0;
+  const counted = new ReadableStream({
+    start(controller) {
+      const reader = res.body.getReader();
+      (async function pump() {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) { controller.close(); return; }
+          got += value.byteLength;
+          const mb = Math.floor(got / (1024 * 1024));
+          if (mb >= lastShown + 25) {
+            lastShown = mb;
+            log(total ? `${mb} МБ из ${Math.round(total / (1024 * 1024))}` : `${mb} МБ`);
+          }
+          controller.enqueue(value);
+        }
+      })().catch((err) => controller.error(err));
+    },
+  });
+  await pipeline(counted, createWriteStream(tmp));
   const { rename } = await import('node:fs/promises');
   await rename(tmp, dest);
   log('модель на месте.');
   return dest;
+}
+
+/**
+ * Скачать модель заранее, без видео. Нужно ровно для одного случая: не качать
+ * полгигабайта в прямом эфире или на занятии, где все ждут.
+ * @param {'small'|'medium'} [model='small']
+ */
+export async function prefetchModel(model = 'small') {
+  const spec = MODELS[model] || MODELS.small;
+  return ensureModel(spec);
 }
 
 async function readJSONL(p) {
@@ -231,11 +264,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     return i > -1 && args[i + 1] ? args[i + 1] : def;
   };
 
-  if (!srcArg) {
+  // Прогрев: скачать модель заранее, чтобы на занятии или в эфире не ждать полгигабайта.
+  if (args.includes('--prefetch')) {
+    const model = flag('model', 'small');
+    prefetchModel(model)
+      .then((p) => { log(`модель готова: ${p}`); log('расшифровка теперь работает офлайн и мгновенно стартует.'); })
+      .catch((e) => { console.error('ОШИБКА:', e.message); process.exit(1); });
+  } else if (!srcArg) {
     console.error('Использование: node reels/transcribe-local.mjs <видео> [--model small|medium] [--lang ru]');
     console.error('Пример:        node reels/transcribe-local.mjs ./my-video.mp4');
+    console.error('Прогрев:       node reels/transcribe-local.mjs --prefetch   (скачать модель заранее)');
     process.exit(1);
-  }
+  } else
 
   transcribeLocal(srcArg, { model: flag('model', 'small'), language: flag('lang', 'ru') })
     .then(async ({ words, text, exact }) => {
