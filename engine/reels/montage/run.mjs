@@ -125,6 +125,7 @@ export async function run(configPath) {
     hook: cfg.hook || null,
     brand: cfg.brand || 'IKIGAI PROMOTION',
     accent: cfg.accent || '#E5231B',
+    theme: cfg.theme || null,
     fps: FPS,
     outDir: workDir,
   });

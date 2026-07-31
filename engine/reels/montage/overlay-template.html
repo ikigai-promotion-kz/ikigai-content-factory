@@ -19,9 +19,37 @@
 
     Ничего смыслового за эти границы не выносим. Фон и лицо — можно, текст — нет.
   */
+  /*
+    Оформление вынесено в переменные: их задаёт блок `theme` в конфиге ролика.
+    Ниже — значения по умолчанию (фирменный стиль IKIGAI PROMOTION). Всё, что
+    здесь перечислено, человек меняет из конфига словами, не трогая шаблон.
+    Геометрию (координаты, safe-zone, размер кадра) сюда НЕ выносим: она
+    считается из base.mjs и произвольной правке не подлежит.
+  */
+  :root {
+    --font: 'Inter','Segoe UI',Arial,sans-serif;  /* гарнитура всех надписей */
+    --accent: #E5231B;              /* акцент: хук, подсветка слова, линейки */
+    --card-bg: #F7F4EC;             /* фон титра-карточки */
+    --card-text: #12100E;           /* заголовок карточки */
+    --card-sub: #5A5652;            /* подзаголовок карточки */
+    --cap-bg: #FFFFFF;              /* фон плашки субтитров */
+    --cap-text: #12100E;            /* обычное слово в субтитрах */
+    --hook-text: #FFFFFF;           /* текст хука на акцентной плашке */
+    --frame-color: #FFFFFF;         /* рамка бокса спикера */
+    --frame-width: 7px;             /* её толщина */
+    --radius-card: 22px;            /* скругление карточки */
+    --radius-cap: 20px;             /* скругление плашки субтитров */
+    --radius-hook: 8px;             /* скругление хука */
+    --case-head: uppercase;         /* регистр заголовков: uppercase | none */
+    --shadow: 0 26px 60px rgba(0,0,0,.4);
+
+    /* Переопределения из конфига идут последними — иначе дефолты выше их затрут. */
+    {{THEME_VARS}}
+  }
+
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:1080px; height:1920px; overflow:hidden; background:transparent; }
-  body { font-family:'Inter','Segoe UI',Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  body { font-family:var(--font); -webkit-font-smoothing:antialiased; }
   #stage { position:absolute; inset:0; }
 
   /* ── Постоянные метки: прогресс ролика и бренд ── */
@@ -35,17 +63,17 @@
 
   /* ── Хук: первая плашка, обязана остановить скролл до первого слова ── */
   #hook { position:absolute; left:60px; right:150px; top:210px; opacity:0;
-          background:var(--accent); color:#FFFFFF; padding:26px 34px; border-radius:8px;
+          background:var(--accent); color:var(--hook-text); padding:26px 34px; border-radius:var(--radius-hook);
           font-size:58px; font-weight:900; line-height:1.02; letter-spacing:-1.5px;
-          text-transform:uppercase; box-shadow:0 18px 50px rgba(0,0,0,.4);
+          text-transform:var(--case-head); box-shadow:0 18px 50px rgba(0,0,0,.4);
           will-change:transform,opacity; }
 
   /* ── Караоке: одна плашка с фразой, текущее слово подсвечено ── */
   #cap { position:absolute; left:60px; right:150px; opacity:0; display:flex; justify-content:center;
          will-change:transform,opacity; }
-  #capBox { background:#FFFFFF; border-radius:20px; padding:20px 26px; max-width:940px;
+  #capBox { background:var(--cap-bg); border-radius:var(--radius-cap); padding:20px 26px; max-width:940px;
             box-shadow:0 14px 40px rgba(0,0,0,.32); text-align:center; }
-  .wd { display:inline-block; font-size:52px; font-weight:800; color:#12100E; line-height:1.12;
+  .wd { display:inline-block; font-size:52px; font-weight:800; color:var(--cap-text); line-height:1.12;
         letter-spacing:-1px; padding:2px 8px; border-radius:10px; }
   .wd.key { color:var(--accent); }
   .wd.now { background:var(--accent); color:#FFFFFF; }
@@ -53,7 +81,7 @@
 
   /* ── Рамка бокса спикера в боксовой сцене ── */
   #frame { position:absolute; opacity:0;
-           box-shadow:0 0 0 7px #FFFFFF, 0 34px 70px rgba(0,0,0,.45); border-radius:2px; }
+           box-shadow:0 0 0 var(--frame-width) var(--frame-color), 0 34px 70px rgba(0,0,0,.45); border-radius:2px; }
 
   /* ── Контент-зона под боксом: пруфы и титры ──
      Верх зоны заходит на нижний край бокса: наслоение читается как продуманная
@@ -63,7 +91,7 @@
   /* Веер реальных работ: пруф обязан подтверждать сказанное, а не описывать его словами. */
   .fan { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; }
   .fan img { width:290px; height:340px; object-fit:cover; border-radius:10px;
-             box-shadow:0 20px 44px rgba(0,0,0,.42); border:6px solid #FFFFFF;
+             box-shadow:0 20px 44px rgba(0,0,0,.42); border:6px solid var(--frame-color);
              margin:0 -18px; opacity:0; will-change:transform,opacity; }
   /* Подпись пруфа — акцентный шильдик под веером, в габаритах зоны: в прогоне v3 она
      висела ниже и её накрывала плашка субтитров. */
@@ -75,19 +103,19 @@
             max-width:86%; text-align:center; line-height:1.3; }
 
   /* Титр-карточка: кульминация фразы уходит в крупный текст, а не тонет в речи. */
-  .card { position:absolute; left:0; right:0; top:20px; opacity:0; background:#F7F4EC;
-          border-radius:22px; padding:40px 44px; box-shadow:0 26px 60px rgba(0,0,0,.4);
+  .card { position:absolute; left:0; right:0; top:20px; opacity:0; background:var(--card-bg);
+          border-radius:var(--radius-card); padding:40px 44px; box-shadow:var(--shadow);
           will-change:transform,opacity; }
-  .card h1 { font-size:92px; font-weight:900; color:#12100E; letter-spacing:-3px; line-height:.94;
-             text-transform:uppercase; }
+  .card h1 { font-size:92px; font-weight:900; color:var(--card-text); letter-spacing:-3px; line-height:.94;
+             text-transform:var(--case-head); }
   .card .rule { height:9px; background:var(--accent); margin-top:22px; width:0; }
-  .card .sub { font-size:32px; color:#5A5652; font-weight:600; margin-top:18px; }
+  .card .sub { font-size:32px; color:var(--card-sub); font-weight:600; margin-top:18px; }
 
   /* ── Финал: резкий CTA-кадр, обещание хука закрывается текстом ── */
   #cta { position:absolute; inset:0; opacity:0; background:rgba(10,9,8,.86);
          display:flex; flex-direction:column; justify-content:center; padding:0 80px; }
   #cta h1 { font-size:104px; font-weight:900; color:#FFFFFF; letter-spacing:-4px; line-height:.94;
-            text-transform:uppercase; }
+            text-transform:var(--case-head); }
   #cta .rule { height:11px; background:var(--accent); margin:34px 0 30px; width:0; }
   #cta .sub { font-size:38px; color:#D9D4CC; font-weight:600; line-height:1.3; }
   #cta .mark { position:absolute; left:80px; bottom:300px; font-size:26px; font-weight:800;
