@@ -67,10 +67,12 @@
              margin:0 -18px; opacity:0; will-change:transform,opacity; }
   /* Подпись пруфа — акцентный шильдик под веером, в габаритах зоны: в прогоне v3 она
      висела ниже и её накрывала плашка субтитров. */
+  /* nowrap здесь ломался: подпись длиннее веера вылезала за него и наезжала
+     на снимки. Перенос по строкам, ширина ограничена шириной кадра. */
   .fanCap { position:absolute; left:50%; bottom:2px; transform:translateX(-50%);
             font-size:26px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
             color:#FFFFFF; background:var(--accent); padding:7px 16px; border-radius:6px;
-            white-space:nowrap; }
+            max-width:86%; text-align:center; line-height:1.3; }
 
   /* Титр-карточка: кульминация фразы уходит в крупный текст, а не тонет в речи. */
   .card { position:absolute; left:0; right:0; top:20px; opacity:0; background:#F7F4EC;
@@ -186,7 +188,10 @@
 
     // ── хук ──
     if (HOOK) {
-      const k = clamp01(t / 0.3);
+      // Начинаем не с нуля: первый кадр ролика — это превью в ленте, и при
+      // прозрачности 0 он уходил в ленту без хука, с одной плашкой бренда.
+      // Влёт сохраняем, но через сдвиг, а не через долгое проявление.
+      const k = clamp01(0.6 + t / 0.12);
       const out = t > HOOK.t1 - 0.25 ? clamp01((t - (HOOK.t1 - 0.25)) / 0.25) : 0;
       hookEl.style.opacity = t > HOOK.t1 ? '0' : String((1 - out) * k);
       hookEl.style.transform = 'translateY(' + (-40 * (1 - easeOutBack(k)) - 30 * out) + 'px)';

@@ -83,6 +83,19 @@ const PLATFORMS = [
       'Если текст длиннее 1024: видео без подписи, а текст следующим сообщением',
       'Проверить в канале, что видео проигрывается кружком превью, а не открывается плеером-файлом',
     ],
+    // Выпуск бывает без ролика (только карусель). Раньше площадка целиком
+    // выпадала и готовый текст терялся, хотя в Telegram он живёт сам по себе.
+    // Тогда это обычное сообщение, а его лимит 4096, а не 1024.
+    textOnly: {
+      video: null,
+      files: (t) => [{ name: 'post.txt', label: 'текст поста', limit: 4096, text: withTags(t) }],
+      limitsNote: 'обычное сообщение до 4096 знаков (1024 — только если текст идёт подписью к медиа)',
+      how: [
+        'Ролика в этом выпуске нет — идём текстовым постом',
+        'Скопировать post.txt в сообщение канала',
+        'Прикладываете слайды карусели альбомом — текст станет подписью к медиа, и лимит упадёт до 1024',
+      ],
+    },
   },
   {
     key: 'youtube',
@@ -195,11 +208,19 @@ if (videoPath) {
 const problems = [];
 const report = [];
 
-for (const p of PLATFORMS) {
-  const t = cfg.texts[p.key] || (p.key === 'carousel' && cfg.texts.instagram ? cfg.texts.instagram : null);
-  if (!t) { console.log(`\n${p.name}: пропущено — в конфиге нет texts.${p.key}`); continue; }
-  if (p.slides && !slides.length) { console.log(`\n${p.name}: пропущено — слайды не переданы`); continue; }
-  if (p.video && !videoPath) { console.log(`\n${p.name}: пропущено — ролик не передан`); continue; }
+const usedPlatforms = [];
+
+for (const base of PLATFORMS) {
+  const t = cfg.texts[base.key] || (base.key === 'carousel' && cfg.texts.instagram ? cfg.texts.instagram : null);
+  if (!t) { console.log(`\n${base.name}: пропущено — в конфиге нет texts.${base.key}`); continue; }
+  if (base.slides && !slides.length) { console.log(`\n${base.name}: пропущено — слайды не переданы`); continue; }
+
+  const videoMissing = Boolean(base.video) && !videoPath;
+  if (videoMissing && !base.textOnly) { console.log(`\n${base.name}: пропущено — ролик не передан`); continue; }
+  // Площадка без ролика публикуется по своим правилам: другой файл, лимит и порядок.
+  const p = videoMissing ? { ...base, ...base.textOnly } : base;
+  usedPlatforms.push(p);
+  if (videoMissing) console.log(`\n${p.name}: ролика нет — текст сохранён как пост, а не как подпись к медиа`);
 
   const dir = path.join(outDir, p.dir);
   await mkdir(dir, { recursive: true });
@@ -248,7 +269,7 @@ for (const p of PLATFORMS) {
   }
 }
 
-await writeFile(path.join(outDir, 'README.txt'), buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems }), 'utf8');
+await writeFile(path.join(outDir, 'README.txt'), buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems, usedPlatforms }), 'utf8');
 
 if (problems.length) {
   await writeFile(path.join(outDir, 'ПРОБЛЕМЫ.txt'),
@@ -308,10 +329,19 @@ async function resolveSlides(input) {
   }
   const dir = path.resolve(input);
   await mustExist(dir, 'папка со слайдами');
+  // Дефис И подчёркивание: конвейер каруселей пишет slide_01.png, руками чаще
+  // называют slide-1.png. Прогон 31.07.2026: папка выпуска собралась без единого
+  // слайда и отрапортовала «ГОТОВО» — расхождение в одном символе.
   const files = (await readdir(dir))
-    .filter((f) => /^slide-\d+\.(png|jpe?g)$/i.test(f))
+    .filter((f) => /^slide[-_]\d+\.(png|jpe?g)$/i.test(f))
     // Сортировка по числу, а не по строке: иначе slide-10 встанет перед slide-2.
     .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
+  if (!files.length) {
+    // Молчать нельзя: «слайды не переданы» при указанной папке читается как
+    // «их и не просили», и брак уезжает в публикацию.
+    console.error(`В папке ${dir} нет файлов вида slide_01.png / slide-1.png — карусель собрать не из чего.`);
+    process.exit(1);
+  }
   return files.map((f) => path.join(dir, f));
 }
 
@@ -341,9 +371,10 @@ async function probeDuration(src) {
 }
 
 /** README для человека, который будет заливать руками. Без жаргона. */
-function buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems }) {
+function buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems, usedPlatforms }) {
   const L = [];
-  const used = PLATFORMS.filter((p) => report.some((r) => r.platform === p.name));
+  // Именно те площадки, что легли в папку: у площадки без ролика свои инструкции.
+  const used = usedPlatforms.filter((p) => report.some((r) => r.platform === p.name));
 
   L.push(`ПАКЕТ К ВЫПУСКУ — ${name}`);
   L.push(`собран ${new Date().toLocaleString('ru-RU')}`);
