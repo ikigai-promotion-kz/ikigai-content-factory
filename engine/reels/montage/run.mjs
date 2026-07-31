@@ -22,6 +22,7 @@ import { buildEdl } from './edl.mjs';
 import { renderBase, BOX, FRAMING } from './base.mjs';
 import { mixAudio } from './audio.mjs';
 import { buildOverlayHtml, renderOverlayFrames, compositeOverlay } from './overlay.mjs';
+import { measureLoudness, TARGET } from './loudness.mjs';
 import { runBin } from '../lib/bin.mjs';
 
 const FPS = 30;
@@ -104,6 +105,7 @@ export async function run(configPath) {
 
   const proofs = [];
   const cards = [];
+  const takeovers = [];
   for (const beat of cfg.beats || []) {
     const p = edl.phrases[beat.phrase];
     if (!p) { log(`⚠ бит на фразу #${beat.phrase} пропущен: такой фразы нет`); continue; }
@@ -111,7 +113,9 @@ export async function run(configPath) {
     const win = { t0: Math.max(0, p.t0 - 0.08), t1: Math.min(edl.outDuration, p.t1 + 0.45) };
     if (beat.card) cards.push({ ...win, ...beat.card });
     if (beat.proof) proofs.push({ ...win, images: beat.proof.images.map((p) => fileUrl(near(p))), caption: beat.proof.caption });
+    if (beat.takeover) takeovers.push({ ...win, ...beat.takeover });
   }
+  if (takeovers.length) log(`титров-перекрытий: ${takeovers.length}`);
 
   const cta = cfg.cta
     ? { t0: Math.max(0, edl.outDuration - (cfg.cta.hold || 2.0)), title: cfg.cta.title, sub: cfg.cta.sub }
@@ -121,7 +125,7 @@ export async function run(configPath) {
     phrases: edl.phrases,
     duration: edl.outDuration,
     box: BOX,
-    boxes, proofs, cards, cta,
+    boxes, proofs, cards, takeovers, cta,
     hook: cfg.hook || null,
     brand: cfg.brand || 'IKIGAI PROMOTION',
     accent: cfg.accent || '#E5231B',
@@ -138,8 +142,19 @@ export async function run(configPath) {
   const sec = Number(process.hrtime.bigint() - t0) / 1e9;
   log(`кадров оверлея: ${frames} за ${sec.toFixed(1)} сек (${(frames / sec).toFixed(0)} кадр/сек)`);
 
+  // Замер громкости до композита: второй проход применит ровно нужную поправку,
+  // а не будет подгонять её на ходу. Не получилось — идём в один проход, как раньше.
+  const lufs = cfg.lufs ?? -14;
+  let measured = null;
+  if (lufs !== null) {
+    measured = await measureLoudness(soundPath, { ...TARGET, I: lufs });
+    log(measured
+      ? `громкость: замер ${Number(measured.input_i).toFixed(1)} LUFS → приводим к ${lufs}`
+      : `⚠ громкость: замер не удался — нормализация в один проход`);
+  }
+
   const finalPath = path.join(workDir, cfg.name ? `${cfg.name}.mp4` : 'final.mp4');
-  await compositeOverlay(soundPath, framesDir, finalPath, FPS, cfg.lufs ?? -14);
+  await compositeOverlay(soundPath, framesDir, finalPath, FPS, lufs, measured);
   log(`готово: ${finalPath}`);
 
   // Контрольные кадры: приёмка глазами обязательна, гейт по метрикам её не заменяет.

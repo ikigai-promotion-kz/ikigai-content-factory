@@ -18,6 +18,7 @@ import { mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { loudnormFilter, TARGET } from './loudness.mjs';
 import { runBin } from '../lib/bin.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -46,7 +47,8 @@ const H = 1920;
  * @returns {Promise<string>} путь к overlay.html
  */
 export async function buildOverlayHtml({
-  phrases = [], duration, box, boxes = [], hook = null, proofs = [], cards = [], cta = null,
+  phrases = [], duration, box, boxes = [], hook = null, proofs = [], cards = [],
+  takeovers = [], cta = null,
   brand = 'IKIGAI PROMOTION', fps = 30, accent = '#E5231B', theme = null, outDir,
 }) {
   await mkdir(outDir, { recursive: true });
@@ -65,6 +67,7 @@ export async function buildOverlayHtml({
     BOXES: JSON.stringify(boxes),
     PROOFS: JSON.stringify(proofs),
     CARDS: JSON.stringify(cards),
+    TAKEOVERS: JSON.stringify(takeovers),
     CTA: JSON.stringify(cta),
     BRAND: brand,
   };
@@ -105,6 +108,58 @@ const PRESETS = {
     cardBg: '#FBFAF7', cardText: '#1C1A17', cardSub: '#787268',
     radiusCard: '28px', radiusCap: '26px', radiusHook: '18px',
   },
+
+  // ── Шесть наборов, снятых с чужого завода (разведка 31.07.2026) ──
+  // Там это «стилевые пресеты рилса», и по составу они ровно то же, что наши темы:
+  // палитра плюс типографика. Генерации не требуют — берутся бесплатно.
+
+  // Кинетик: чёрный с оранжевым, у автора это дефолт примерно семи роликов из десяти.
+  kinetik: {
+    accent: '#F5A623',
+    cardBg: '#000000', cardText: '#FFFFFF', cardSub: '#9A9A9A',
+    capBg: '#000000', capText: '#FFFFFF',
+    sceneBg: 'rgba(0,0,0,.94)', frameColor: '#000000',
+    radiusCard: '6px', radiusCap: '6px', radiusHook: '2px',
+  },
+  // Неон-тех: тёмно-синяя база, циановый акцент. Под технические темы.
+  'neon-tech': {
+    accent: '#38E1FF',
+    cardBg: '#0A0F1E', cardText: '#EAF6FF', cardSub: '#7E94AD',
+    capBg: '#0A0F1E', capText: '#EAF6FF',
+    sceneBg: 'rgba(10,15,30,.94)', sceneSub: '#7E94AD', frameColor: '#0A0F1E',
+  },
+  // Минимал-люкс: много воздуха, чёрная типографика, один алый акцент.
+  'minimal-lux': {
+    accent: '#E0362C',
+    cardBg: '#FAFAF8', cardText: '#111111', cardSub: '#6E6E6E',
+    capBg: '#FAFAF8', capText: '#111111',
+    sceneBg: 'rgba(250,250,248,.95)', sceneText: '#111111', sceneSub: '#6E6E6E',
+    frameColor: '#FAFAF8', radiusCard: '2px', radiusCap: '2px', radiusHook: '0px',
+  },
+  // Editorial-бумага: кремовая бумага и терракота. Родня нашим гайдам.
+  editorial: {
+    accent: '#BE4A24', caseHead: 'none',
+    cardBg: '#F7F2E8', cardText: '#231C16', cardSub: '#7A6A5A',
+    capBg: '#F7F2E8', capText: '#231C16',
+    sceneBg: 'rgba(247,242,232,.95)', sceneText: '#231C16', sceneSub: '#7A6A5A',
+    frameColor: '#F7F2E8', radiusCard: '10px', radiusCap: '10px', radiusHook: '4px',
+  },
+  // Телеграм-синий: под скриншоты переписок и чат-мокапы.
+  telegram: {
+    accent: '#2AABEE',
+    cardBg: '#0E1621', cardText: '#F0F4F8', cardSub: '#7E8B99',
+    capBg: '#0E1621', capText: '#F0F4F8',
+    sceneBg: 'rgba(14,22,33,.94)', sceneSub: '#7E8B99', frameColor: '#0E1621',
+    radiusCard: '18px', radiusCap: '18px', radiusHook: '12px',
+  },
+  // Коллаж-газета: газетная бумага, красные штампы, чёрно-белый строгий набор.
+  'gazeta-collage': {
+    accent: '#C81E1E',
+    cardBg: '#EFEAE0', cardText: '#151310', cardSub: '#5F594F',
+    capBg: '#EFEAE0', capText: '#151310',
+    sceneBg: 'rgba(239,234,224,.95)', sceneText: '#151310', sceneSub: '#5F594F',
+    frameColor: '#EFEAE0', radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
+  },
 };
 
 /** Имя поля в конфиге → имя CSS-переменной шаблона. */
@@ -124,6 +179,9 @@ const THEME_KEYS = {
   radiusHook: '--radius-hook',
   caseHead: '--case-head',
   shadow: '--shadow',
+  sceneBg: '--scene-bg',
+  sceneText: '--scene-text',
+  sceneSub: '--scene-sub',
 };
 
 /**
@@ -228,21 +286,26 @@ export async function renderOverlayFrames(htmlPath, { frames, fps = 30, outDir, 
  * Громкость: соцсети приводят звук к своему уровню сами, и ролик, снятый тише
  * ленты, после их нормализации звучит глухо. Приводим к −14 LUFS (общий ориентир
  * Instagram / TikTok / YouTube) сами — тогда площадке нечего исправлять.
- * loudnorm в один проход: двухпроходный точнее, но требует прогона ради замера,
- * а на голосовом дубле разница слышна только приборам.
+ * Проходов два, если замер передан: сначала громкость меряется по всему файлу
+ * (`loudness.mjs`), потом применяется ровно нужная поправка. Замер не удался —
+ * работаем в один проход, как раньше: точность важна, собранный ролик важнее.
  *
  * @param {string} basePath - видео (уже приведённое к 1080×1920)
  * @param {string} framesDir
  * @param {string} outPath
  * @param {number} [fps=30]
  * @param {number|null} [lufs=-14] - целевая громкость; null — не трогать звук
+ * @param {Object|null} [measured=null] - выход measureLoudness для второго прохода
  */
-export async function compositeOverlay(basePath, framesDir, outPath, fps = 30, lufs = -14) {
+export async function compositeOverlay(basePath, framesDir, outPath, fps = 30, lufs = -14, measured = null) {
   await mkdir(path.dirname(outPath), { recursive: true });
   // Звуковая ветка идёт через filter_complex вместе с видео: отдельный -af рядом с
   // -filter_complex ffmpeg не принимает.
+  const audioFilter = lufs === null
+    ? null
+    : loudnormFilter(measured, { ...TARGET, I: lufs });
   const graph = '[0:v][1:v]overlay=0:0:format=auto,format=yuv420p[v]'
-    + (lufs === null ? '' : `;[0:a]loudnorm=I=${lufs}:TP=-1.5:LRA=11[a]`);
+    + (audioFilter === null ? '' : `;[0:a]${audioFilter}[a]`);
   await runBin('ffmpeg', [
     '-y',
     '-i', basePath,
