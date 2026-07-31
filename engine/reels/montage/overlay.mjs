@@ -155,12 +155,89 @@ const PRESETS = {
     radiusCard: '18px', radiusCap: '18px', radiusHook: '12px',
   },
   // Коллаж-газета: газетная бумага, красные штампы, чёрно-белый строгий набор.
+  // Единственная из шести, у кого в рабочем скилле автора нет hex — цвета уточнены
+  // по витрине стилей (там `collage` = #E8DEC8 бумага + #D2302C красный).
   'gazeta-collage': {
-    accent: '#C81E1E',
-    cardBg: '#EFEAE0', cardText: '#151310', cardSub: '#5F594F',
-    capBg: '#EFEAE0', capText: '#151310',
-    sceneBg: 'rgba(239,234,224,.95)', sceneText: '#151310', sceneSub: '#5F594F',
-    frameColor: '#EFEAE0', plateBg: '#EFEAE0', radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
+    accent: '#D2302C',
+    cardBg: '#E8DEC8', cardText: '#1A1A1A', cardSub: '#5F594F',
+    capBg: '#E8DEC8', capText: '#1A1A1A',
+    sceneBg: 'rgba(232,222,200,.95)', sceneText: '#1A1A1A', sceneSub: '#5F594F',
+    frameColor: '#E8DEC8', plateBg: '#E8DEC8', radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
+  },
+
+  // ── Восемь наборов из полной библиотеки стилей автора (31.07.2026) ──
+  // Палитры взяты из витрины `konveyer` (поле pal: фон · акцент · третий цвет).
+  // Там, где стиль есть и в рабочем скилле, и на витрине, hex берутся ИЗ СКИЛЛА:
+  // витрина сделана для показа, скилл — рабочий инструмент, и они расходятся.
+
+  // Кинетик-премиум: обсидиан, шампань-золото, крем. Дорогой и тихий.
+  premium: {
+    accent: '#C9A227', caseHead: 'none',
+    cardBg: '#0B0B0C', cardText: '#F2E8D5', cardSub: '#9A9184',
+    capBg: '#0B0B0C', capText: '#F2E8D5',
+    sceneBg: 'rgba(11,11,12,.94)', sceneSub: '#9A9184', frameColor: '#0B0B0C', plateBg: '#0B0B0C',
+    radiusCard: '4px', radiusCap: '4px', radiusHook: '0px',
+  },
+  // 3D-моушн: индиго-фиолетовый градиент, глянец. Объёмные буквы даёт только
+  // картинка-фон — вёрсткой их не собрать, поэтому тема идёт в паре с sceneImage.
+  'd3-motion': {
+    accent: '#38BDF8',
+    cardBg: '#3B1E8F', cardText: '#F5F3FF', cardSub: '#C4B5FD',
+    capBg: '#3B1E8F', capText: '#F5F3FF',
+    sceneBg: 'rgba(59,30,143,.88)', sceneSub: '#C4B5FD', frameColor: '#7C3AED', plateBg: '#3B1E8F',
+    radiusCard: '20px', radiusCap: '20px', radiusHook: '14px',
+  },
+  // Стикер-мем: электрик-блю растр, кислотные цвета, толстые белые канты.
+  meme: {
+    accent: '#FF2D9B',
+    cardBg: '#1E9BE8', cardText: '#FFFFFF', cardSub: '#FFE500',
+    capBg: '#FFE500', capText: '#101010',
+    sceneBg: 'rgba(30,155,232,.92)', sceneText: '#FFFFFF', sceneSub: '#FFE500',
+    frameColor: '#FFFFFF', frameWidth: '10px', plateBg: '#1E9BE8',
+    radiusCard: '26px', radiusCap: '26px', radiusHook: '18px',
+  },
+  // Тёплый бренд: кремовая бумага, коралл, мягкие скругления. Человечный разговор.
+  'warm-brand': {
+    accent: '#D97757', caseHead: 'none',
+    cardBg: '#F0EEE6', cardText: '#2B2A28', cardSub: '#6F6B63',
+    capBg: '#F0EEE6', capText: '#2B2A28',
+    sceneBg: 'rgba(240,238,230,.95)', sceneText: '#2B2A28', sceneSub: '#6F6B63',
+    frameColor: '#F0EEE6', plateBg: '#F0EEE6',
+    radiusCard: '24px', radiusCap: '24px', radiusHook: '16px',
+  },
+  // Терминал-про: чёрный, фосфорно-зелёный моноширинный, янтарные алерты.
+  // Ложится на наш экран-терминал внутри перекрытия.
+  'terminal-pro': {
+    accent: '#39FF87',
+    cardBg: '#000000', cardText: '#E6FFEF', cardSub: '#FFB020',
+    capBg: '#000000', capText: '#E6FFEF',
+    sceneBg: 'rgba(0,0,0,.94)', sceneSub: '#FFB020', frameColor: '#000000', plateBg: '#000000',
+    radiusCard: '2px', radiusCap: '2px', radiusHook: '0px',
+  },
+  // Гранж-постер: крупное зерно, рваная бумага, один горячий красный.
+  grunge: {
+    accent: '#E01B12',
+    cardBg: '#EFEAE0', cardText: '#111111', cardSub: '#4A453D',
+    capBg: '#EFEAE0', capText: '#111111',
+    sceneBg: 'rgba(239,234,224,.93)', sceneText: '#111111', sceneSub: '#4A453D',
+    frameColor: '#111111', frameWidth: '9px', plateBg: '#EFEAE0',
+    radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
+  },
+  // Голо-интерфейс: чёрно-бирюзовая база, полосы развёртки, радиальные кольца.
+  holo: {
+    accent: '#2FE6E0',
+    cardBg: '#04161A', cardText: '#FFFFFF', cardSub: '#7FCFCB',
+    capBg: '#04161A', capText: '#FFFFFF',
+    sceneBg: 'rgba(4,22,26,.90)', sceneSub: '#7FCFCB', frameColor: '#2FE6E0', frameWidth: '4px',
+    plateBg: '#04161A', radiusCard: '14px', radiusCap: '14px', radiusHook: '8px',
+  },
+  // Матрица-логи: зелёный код по всему кадру. Работает в паре с экраном-терминалом.
+  'matrix-logs': {
+    accent: '#2BFF6A',
+    cardBg: '#03110A', cardText: '#D8FFE6', cardSub: '#4E8F66',
+    capBg: '#03110A', capText: '#D8FFE6',
+    sceneBg: 'rgba(3,17,10,.94)', sceneSub: '#4E8F66', frameColor: '#0E3D22', plateBg: '#03110A',
+    radiusCard: '2px', radiusCap: '2px', radiusHook: '0px',
   },
 };
 
