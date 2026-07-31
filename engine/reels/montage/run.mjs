@@ -22,6 +22,7 @@ import { buildEdl } from './edl.mjs';
 import { renderBase, BOX, FRAMING } from './base.mjs';
 import { mixAudio } from './audio.mjs';
 import { buildOverlayHtml, renderOverlayFrames, compositeOverlay } from './overlay.mjs';
+import { spliceScenes } from './splice.mjs';
 import { measureLoudness, TARGET } from './loudness.mjs';
 import { runBin } from '../lib/bin.mjs';
 
@@ -62,8 +63,11 @@ export async function run(configPath) {
   log(`катов: ${edl.clips.length}  (${edl.clips.map((c) => c.shot).join(' → ')})`);
   edl.phrases.forEach((p, i) => {
     const beat = (cfg.beats || []).find((b) => b.phrase === i);
+    // Приёмов три, а подписи было две: перекрытие печаталось как «пруф», и по логу
+    // нельзя было понять, что режиссёрски стоит на фразе.
+    const mark = beat && (beat.card ? 'титр' : beat.takeover ? 'перекрытие' : 'пруф');
     log(`  #${String(i).padStart(2)} ${p.t0.toFixed(2)}–${p.t1.toFixed(2)}  ${p.text}`
-      + (beat ? `   ← ${beat.card ? 'титр' : 'пруф'}` : ''));
+      + (mark ? `   ← ${mark}` : ''));
   });
 
   await writeFile(path.join(workDir, 'edl.json'), JSON.stringify(edl, null, 1), 'utf8');
@@ -81,13 +85,37 @@ export async function run(configPath) {
   log(`длительность базы: ${baseDuration.toFixed(3)} сек, план ${planned.toFixed(3)} — дрейф ${driftFrames.toFixed(2)} кадра`);
   if (driftFrames > 1) log(`⚠ дрейф больше кадра: субтитры на длинном ролике уедут`);
 
+  // ── 3.5. Генеративные вставки (необязательно) ──
+  // Сгенерированные сцены кладутся в базу ДО звука и оверлея: тогда субтитры,
+  // титры и бренд ложатся на них так же, как на снятое. Ролик целиком моделью
+  // не собирается — заменяются одна-две сцены, живое лицо остаётся нашим.
+  let stagePath = basePath;
+  if (cfg.inserts?.length) {
+    const windows = [];
+    for (const ins of cfg.inserts) {
+      const p = edl.phrases[ins.phrase];
+      if (!p) { log(`⚠ вставка на фразу #${ins.phrase} пропущена: такой фразы нет`); continue; }
+      windows.push({ t0: p.t0, t1: p.t1, video: near(ins.video) });
+    }
+    if (windows.length) {
+      const splicedPath = path.join(workDir, 'base-spliced.mp4');
+      const r = await spliceScenes({
+        basePath, inserts: windows, outPath: splicedPath,
+        workDir: path.join(workDir, 'splice'), fps: FPS,
+      });
+      stagePath = splicedPath;
+      log(`вставок сцен: ${windows.length}, дрейф после склейки ${r.driftFrames.toFixed(2)} кадра`);
+      if (r.driftFrames > 1) log(`⚠ вставка увела длительность больше чем на кадр — субтитры после неё уедут`);
+    }
+  }
+
   // ── 4. Звук ──
   // Ставится до оверлея, чтобы loudnorm в композите выравнивал уже готовый микс,
   // а не одну речь. Приглушение музыки считается по фразам монтажного листа —
   // это и есть точные интервалы речи в шкале смонтированного ролика.
   const mixPath = path.join(workDir, 'base-mixed.mp4');
   const { outPath: soundPath, applied } = await mixAudio({
-    videoPath: basePath,
+    videoPath: stagePath,
     outPath: mixPath,
     speechRanges: edl.phrases.map((p) => ({ t0: p.t0, t1: p.t1 })),
     music: cfg.music?.path ? { ...cfg.music, path: near(cfg.music.path) } : undefined,
@@ -121,6 +149,13 @@ export async function run(configPath) {
     ? { t0: Math.max(0, edl.outDuration - (cfg.cta.hold || 2.0)), title: cfg.cta.title, sub: cfg.cta.sub }
     : null;
 
+  // Картинка фона полноэкранных кадров лежит рядом с конфигом, а в CSS должна
+  // попасть готовым url(file:///…). Человек пишет путь, движок делает из него ссылку.
+  const theme = typeof cfg.theme === 'object' && cfg.theme?.sceneImage
+    ? { ...cfg.theme, sceneImage: `url("${fileUrl(near(cfg.theme.sceneImage))}")` }
+    : cfg.theme || null;
+  if (typeof theme === 'object' && theme?.sceneImage) log('фон полноэкранных кадров: картинка из темы');
+
   const htmlPath = await buildOverlayHtml({
     phrases: edl.phrases,
     duration: edl.outDuration,
@@ -129,7 +164,7 @@ export async function run(configPath) {
     hook: cfg.hook || null,
     brand: cfg.brand || 'IKIGAI PROMOTION',
     accent: cfg.accent || '#E5231B',
-    theme: cfg.theme || null,
+    theme,
     fps: FPS,
     outDir: workDir,
   });

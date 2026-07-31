@@ -39,6 +39,7 @@ const H = 1920;
  * @param {{text:string,t1:number}|null} [args.hook]
  * @param {Array<{t0:number,t1:number,images:string[],caption?:string}>} [args.proofs]
  * @param {Array<{t0:number,t1:number,title:string,sub?:string}>} [args.cards]
+ * @param {Array<{t0:number,t1:number,title:string,sub?:string,screen?:Object}>} [args.takeovers]
  * @param {{t0:number,title:string,sub?:string}|null} [args.cta]
  * @param {string} [args.brand='IKIGAI PROMOTION']
  * @param {number} [args.fps=30]
@@ -52,6 +53,7 @@ export async function buildOverlayHtml({
   brand = 'IKIGAI PROMOTION', fps = 30, accent = '#E5231B', theme = null, outDir,
 }) {
   await mkdir(outDir, { recursive: true });
+  validateTakeovers(takeovers);
   const tpl = await readFile(TEMPLATE, 'utf8');
   // Акцент считается один раз здесь: скрипт шаблона ставит его инлайн-стилем,
   // а инлайн выигрывает у :root — theme.accent иначе молча не применялся.
@@ -182,7 +184,37 @@ const THEME_KEYS = {
   sceneBg: '--scene-bg',
   sceneText: '--scene-text',
   sceneSub: '--scene-sub',
+  sceneImage: '--scene-image',
 };
+
+/** Экраны, которые умеет рисовать перекрытие. Список один и здесь, и в шаблоне. */
+const SCREEN_KINDS = ['terminal', 'phone'];
+
+/**
+ * Проверить экраны перекрытий до рендера.
+ *
+ * Молчаливый пропуск здесь дороже, чем где-либо ещё: человек ставит терминал на
+ * кульминацию, ждёт двадцать минут рендера и получает пустой титр. Роняем сразу.
+ *
+ * @param {Array<{title?:string,screen?:Object}>} takeovers
+ */
+function validateTakeovers(takeovers) {
+  takeovers.forEach((o, i) => {
+    const scr = o.screen;
+    if (!scr) return;
+    if (!SCREEN_KINDS.includes(scr.kind)) {
+      throw new Error(
+        `takeover #${i}: screen.kind «${scr.kind}» не существует. Есть: ${SCREEN_KINDS.join(', ')}`
+      );
+    }
+    if (scr.kind === 'terminal' && !(Array.isArray(scr.lines) && scr.lines.length)) {
+      throw new Error(`takeover #${i}: у экрана terminal обязателен непустой массив lines`);
+    }
+    if (scr.kind === 'phone' && !(Array.isArray(scr.bubbles) && scr.bubbles.length)) {
+      throw new Error(`takeover #${i}: у экрана phone обязателен непустой массив bubbles`);
+    }
+  });
+}
 
 /**
  * theme из конфига → CSS-переменные для :root и итоговый акцент.

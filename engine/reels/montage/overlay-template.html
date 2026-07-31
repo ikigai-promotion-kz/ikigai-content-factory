@@ -45,6 +45,7 @@
     --scene-bg: rgba(10,9,8,.86);   /* фон полноэкранных кадров: финала и титра-перекрытия */
     --scene-text: #FFFFFF;          /* заголовок на этом фоне */
     --scene-sub: #D9D4CC;           /* подзаголовок на этом фоне */
+    --scene-image: none;            /* картинка под этим фоном: url("file:///…") */
 
     /* Переопределения из конфига идут последними — иначе дефолты выше их затрут. */
     {{THEME_VARS}}
@@ -118,8 +119,15 @@
      Оба закрывают кадр целиком и живут по одним правилам, поэтому и стили общие.
      Перекрытие — это кульминация фразы крупным текстом: спикера в этот момент не
      видно, и вся секунда работает на одну мысль. Приём взят из чужого завода,
-     где смена композиции каждые 1.5–2 сек и есть та самая динамика. */
-  #cta, #takeover { position:absolute; inset:0; opacity:0; background:var(--scene-bg);
+     где смена композиции каждые 1.5–2 сек и есть та самая динамика.
+
+     Фон кадра — два слоя: сверху заливка `--scene-bg`, под ней необязательная
+     картинка `--scene-image`. Картинка одна на ролик и делается генератором
+     заранее (одно изображение, не видео), поэтому стоит центы. Заливка при этом
+     обязана стать прозрачнее — иначе картинки под ней не видно. */
+  #cta, #takeover { position:absolute; inset:0; opacity:0;
+         background-image: linear-gradient(var(--scene-bg), var(--scene-bg)), var(--scene-image);
+         background-size: cover; background-position: center;
          display:flex; flex-direction:column; justify-content:center; padding:0 80px; }
   #cta h1, #takeover h1 { font-size:104px; font-weight:900; color:var(--scene-text);
             letter-spacing:-4px; line-height:.94; text-transform:var(--case-head); }
@@ -129,6 +137,48 @@
                letter-spacing:4px; color:var(--accent); }
   /* Заголовок перекрытия крупнее финального: это пик ролика, а не его хвост. */
   #takeover h1 { font-size:124px; }
+  /* С экраном заголовок уступает место самому экрану и работает подписью к нему. */
+  #takeover.has-screen h1 { font-size:84px; letter-spacing:-3px; }
+  #takeover.has-screen .rule { margin:24px 0 22px; }
+
+  /* ── Экран внутри перекрытия: терминал и мокап телефона ──
+     Ответ на его «мокап-терминал». У него псевдокод в окне — абракадабра
+     («imgert tlealire»), потому что кадр рисует модель. Здесь это вёрстка,
+     поэтому текст настоящий и читается на любом стоп-кадре.
+     Печать посимвольная и считается от времени кадра, а не от таймера:
+     иначе рендер перестал бы быть воспроизводимым. */
+  #tkScreen:empty { display:none; }
+  #tkScreen { margin-bottom:26px; }
+
+  .term { background:#0B0F14; border-radius:14px; border:1px solid rgba(255,255,255,.14);
+          box-shadow:0 30px 70px rgba(0,0,0,.5); overflow:hidden; }
+  .term .bar { display:flex; align-items:center; gap:10px; padding:16px 22px;
+               background:rgba(255,255,255,.06); }
+  .term .dot { width:14px; height:14px; border-radius:50%; background:#4A5361; }
+  .term .name { margin-left:12px; font-size:22px; font-weight:700; letter-spacing:2.5px;
+                color:#8296A8; text-transform:uppercase; }
+  .term .body { padding:26px 28px; font-family:'Consolas','Courier New',monospace;
+                font-size:34px; line-height:1.48; color:#D7E3EF; white-space:pre-wrap;
+                word-break:break-word; }
+  .term .ln.ok { color:#3DDC84; }
+  .term .ln.pr { color:var(--accent); font-weight:700; }
+  .term .caret { display:inline-block; width:16px; height:30px; background:var(--accent);
+                 vertical-align:-3px; }
+
+  .phone { width:620px; margin:0 auto; background:#0E1621; border-radius:46px;
+           border:10px solid #33465C; box-shadow:0 34px 80px rgba(0,0,0,.55); overflow:hidden; }
+  .phone .top { height:70px; display:flex; align-items:center; justify-content:center;
+                background:#17212B; font-size:25px; font-weight:700; color:#F0F4F8;
+                letter-spacing:.5px; }
+  .phone .chat { padding:24px 20px; display:flex; flex-direction:column; gap:16px;
+                 min-height:380px; }
+  .bub { max-width:80%; padding:18px 22px; font-size:30px; line-height:1.24;
+         border-radius:22px; will-change:transform,opacity; }
+  .bub.in  { align-self:flex-start; background:#212D3B; color:#F0F4F8; border-bottom-left-radius:6px; }
+  /* Исходящий пузырь — мессенджерный синий, а не акцент темы: на светлом акценте
+     (циан «неон-теха», жёлтый «кинетика») белый текст пропадает. Мокап телефона
+     всегда выглядит как ночной чат, тема в него не вмешивается. */
+  .bub.out { align-self:flex-end;   background:#2B5278; color:#FFFFFF; border-bottom-right-radius:6px; }
 </style>
 </head>
 <body>
@@ -138,7 +188,7 @@
   <div id="hook"></div>
   <div id="frame"></div>
   <div id="cap"><div id="capBox"></div></div>
-  <div id="takeover"><h1></h1><div class="rule"></div><div class="sub"></div></div>
+  <div id="takeover"><h1></h1><div class="rule"></div><div id="tkScreen"></div><div class="sub"></div></div>
   <div id="cta"><h1></h1><div class="rule"></div><div class="sub"></div><div class="mark">{{BRAND}}</div></div>
 </div>
 
@@ -164,6 +214,7 @@
   const frameEl = document.getElementById('frame');
   const ctaEl = document.getElementById('cta');
   const takeoverEl = document.getElementById('takeover');
+  const tkScreenEl = document.getElementById('tkScreen');
 
   if (HOOK) hookEl.textContent = HOOK.text;
   if (CTA) {
@@ -219,6 +270,57 @@
   const easeOutBack = (x) => { const c1 = 1.70158, c3 = c1 + 1;
     return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+  // ── Экран перекрытия: терминал и мокап телефона ──
+  // Разметка собирается заново на каждом кадре — это допустимо ровно потому,
+  // что она чистая функция от доли прошедшего времени: тот же кадр даёт ту же
+  // строку. Текст приходит из конфига, поэтому экранируется.
+  const esc = (s) => String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  function termHtml(scr, p) {
+    const lines = scr.lines || [];
+    const total = lines.reduce((s, l) => s + l.length, 0) || 1;
+    // Печать заканчивается к 70% окна: остаток времени кадр стоит и читается.
+    // Перекрытие живёт полторы-две секунды, дочитывать в движении нечего.
+    const done = clamp01(p / 0.7);
+    let left = Math.ceil(done * total);
+    const rows = [];
+    for (const line of lines) {
+      const take = Math.max(0, Math.min(line.length, left));
+      left -= take;
+      // Класс по первому символу строки: ✓ — сделанное, $ или > — команда.
+      const head = line.trim().charAt(0);
+      const cls = head === '✓' ? ' ok' : (head === '$' || head === '>' ? ' pr' : '');
+      rows.push('<div class="ln' + cls + '">' + esc(line.slice(0, take))
+        + (take > 0 && take < line.length ? '<span class="caret"></span>' : '') + '</div>');
+      if (left <= 0) break;
+    }
+    // Каретка после последней допечатанной строки: мигает, пока экран живёт.
+    const blink = done >= 1 && Math.floor(p * 1000 / 260) % 2 === 0;
+    if (blink) rows.push('<div class="ln"><span class="caret"></span></div>');
+    return '<div class="term"><div class="bar">'
+      + '<span class="dot"></span><span class="dot"></span><span class="dot"></span>'
+      + (scr.title ? '<span class="name">' + esc(scr.title) + '</span>' : '')
+      + '</div><div class="body">' + rows.join('') + '</div></div>';
+  }
+
+  function phoneHtml(scr, p) {
+    const bubbles = scr.bubbles || [];
+    const step = bubbles.length > 1 ? 0.62 / (bubbles.length - 1) : 0;
+    const rows = bubbles.map((b, i) => {
+      const k = clamp01((p - i * step) / 0.16);
+      if (k <= 0) return '';
+      const style = 'opacity:' + k.toFixed(3)
+        + ';transform:translateY(' + (22 * (1 - easeOutCubic(k))).toFixed(1) + 'px) '
+        + 'scale(' + (0.94 + 0.06 * easeOutCubic(k)).toFixed(3) + ')';
+      return '<div class="bub ' + (b.side === 'out' ? 'out' : 'in') + '" style="' + style + '">'
+        + esc(b.text) + '</div>';
+    });
+    return '<div class="phone">'
+      + (scr.title ? '<div class="top">' + esc(scr.title) + '</div>' : '')
+      + '<div class="chat">' + rows.join('') + '</div></div>';
+  }
 
   // Единственная точка истины по кадру: Playwright дёргает её перед каждым скриншотом.
   window._seekFrame = function (n) {
@@ -321,6 +423,18 @@
     if (over) {
       takeoverEl.querySelector('h1').textContent = over.title;
       takeoverEl.querySelector('.sub').textContent = over.sub || '';
+      // Экран (терминал или телефон) — доля прошедшего времени окна, не абсолютные секунды:
+      // перекрытие держится ровно столько, сколько длится фраза, и печать обязана
+      // укладываться в него на любой длине.
+      takeoverEl.classList.toggle('has-screen', Boolean(over.screen));
+      if (over.screen) {
+        const p = clamp01((t - over.t0) / Math.max(0.3, over.t1 - over.t0));
+        tkScreenEl.innerHTML = over.screen.kind === 'phone'
+          ? phoneHtml(over.screen, p)
+          : termHtml(over.screen, p);
+      } else if (tkScreenEl.innerHTML) {
+        tkScreenEl.innerHTML = '';
+      }
       const k = clamp01((t - over.t0) / 0.18);
       const out = t > over.t1 - 0.2 ? clamp01((t - (over.t1 - 0.2)) / 0.2) : 0;
       takeoverEl.style.opacity = String(Math.max(0, (1 - out) * k));
