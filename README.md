@@ -49,7 +49,7 @@
 0. Если в строке выше осталось ВПИШИ_СЮДА_СВОЙ_ПУТЬ — остановись и попроси меня вписать путь. Затем покажи полный путь текущей папки: не совпадает с моим — ОСТАНОВИСЬ и объясни, как открыть нужную.
 1. Склонируй https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory внутри неё
 2. Прочитай factory/plugins/content-factory/skills/factory-setup/SKILL.md и действуй строго по нему
-3. Скопируй ВСЕ папки скиллов (их три) из factory/plugins/content-factory/skills/ в .claude/skills/ моей рабочей папки
+3. Скопируй ВСЕ папки скиллов из factory/plugins/content-factory/skills/ в .claude/skills/ моей рабочей папки
 4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне моей рабочей папки и помоги мне его заполнить
 
 Объясняй каждый шаг простыми словами и спрашивай разрешение перед установкой программ.
