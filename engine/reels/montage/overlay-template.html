@@ -46,6 +46,7 @@
     --scene-text: #FFFFFF;          /* заголовок на этом фоне */
     --scene-sub: #D9D4CC;           /* подзаголовок на этом фоне */
     --scene-image: none;            /* картинка под этим фоном: url("file:///…") */
+    --plate-bg: #12100E;            /* плита вокруг кружка-врезки и сплит-экрана */
 
     /* Переопределения из конфига идут последними — иначе дефолты выше их затрут. */
     {{THEME_VARS}}
@@ -86,6 +87,17 @@
   /* ── Рамка бокса спикера в боксовой сцене ── */
   #frame { position:absolute; opacity:0;
            box-shadow:0 0 0 var(--frame-width) var(--frame-color), 0 34px 70px rgba(0,0,0,.45); border-radius:2px; }
+
+  /* ── Плита с дыркой: кружок-врезка и сплит-экран ──
+     Непрозрачная плоскость на весь кадр с вырезанным окном ровно по прямоугольнику
+     спикера. Дыру делает не маска, а огромная тень наружу от самого окна — один
+     элемент вместо четырёх плашек, и края всегда сходятся идеально.
+     Координаты приходят из того же словаря шотов, что и у базы: второе определение
+     прямоугольника разъехалось бы с картинкой. */
+  .hole { position:absolute; opacity:0;
+          box-shadow:0 0 0 3000px var(--plate-bg), 0 0 0 var(--frame-width) var(--frame-color) inset;
+          border-radius:2px; }
+  .hole.circle { border-radius:50%; }
 
   /* ── Контент-зона под боксом: пруфы и титры ──
      Верх зоны заходит на нижний край бокса: наслоение читается как продуманная
@@ -253,6 +265,21 @@
     return { zone, imgs };
   });
 
+  // Плиты создаются один раз — по одной на окно, которое их просит. Дальше кадр
+  // определяется только прозрачностью, иначе рендер перестанет быть детерминированным.
+  const holeEls = BOXES.map((b) => {
+    if (!b.plate) return null;
+    const el = document.createElement('div');
+    el.className = 'hole' + (b.plate === 'circle' ? ' circle' : '');
+    const bx = b.box || BOX;
+    el.style.left = bx.x + 'px';
+    el.style.top = bx.y + 'px';
+    el.style.width = bx.w + 'px';
+    el.style.height = bx.h + 'px';
+    stage.appendChild(el);
+    return el;
+  });
+
   const cardEls = CARDS.map((c) => {
     const zone = document.createElement('div');
     zone.className = 'zone';
@@ -340,15 +367,24 @@
     }
 
     // ── боксовая сцена: рамка ──
-    const box = BOXES.find((b) => t >= b.t0 && t <= b.t1);
-    const inBox = Boolean(box);
+    const boxIdx = BOXES.findIndex((b) => t >= b.t0 && t <= b.t1);
+    const box = boxIdx >= 0 ? BOXES[boxIdx] : null;
     // В боксовой сцене штамп бренда пришёлся бы на саму картинку и читался бы как
     // водяной знак — на это время он уходит, бренд несут рамка, шильдик пруфа и финал.
-    document.getElementById('brand').style.opacity = inBox ? '0' : '1';
-    if (box) {
-      const k = clamp01((t - box.t0) / 0.25);
-      const out = t > box.t1 - 0.2 ? clamp01((t - (box.t1 - 0.2)) / 0.2) : 0;
-      frameEl.style.opacity = String((1 - out) * k);
+    document.getElementById('brand').style.opacity = box ? '0' : '1';
+    // Появление плиты и рамки считается одинаково: композиция въезжает целиком.
+    const boxK = box
+      ? clamp01((t - box.t0) / 0.25) * (1 - (t > box.t1 - 0.2 ? clamp01((t - (box.t1 - 0.2)) / 0.2) : 0))
+      : 0;
+    holeEls.forEach((el, i) => { if (el) el.style.opacity = i === boxIdx ? String(boxK) : '0'; });
+    // Рамка — только там, где плиты нет: с плитой её роль играет край дырки.
+    if (box && !box.plate) {
+      const bx = box.box || BOX;
+      frameEl.style.left = bx.x + 'px';
+      frameEl.style.top = bx.y + 'px';
+      frameEl.style.width = bx.w + 'px';
+      frameEl.style.height = bx.h + 'px';
+      frameEl.style.opacity = String(boxK);
     } else {
       frameEl.style.opacity = '0';
     }

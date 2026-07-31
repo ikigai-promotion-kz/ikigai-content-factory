@@ -18,11 +18,12 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { alignToAudio } from './align.mjs';
-import { buildEdl } from './edl.mjs';
+import { buildEdl, SHOTS } from './edl.mjs';
 import { renderBase, BOX, FRAMING } from './base.mjs';
 import { mixAudio } from './audio.mjs';
 import { buildOverlayHtml, renderOverlayFrames, compositeOverlay } from './overlay.mjs';
 import { spliceScenes } from './splice.mjs';
+import { readRegistry, recordRelease, sameness } from './registry.mjs';
 import { measureLoudness, TARGET } from './loudness.mjs';
 import { runBin } from '../lib/bin.mjs';
 
@@ -55,9 +56,15 @@ export async function run(configPath) {
   // ── 2. Монтажный лист ──
   // Биты (пруфы и титры) назначаются на фразы, а не на секунды: смысл устойчивее времени.
   const beatPhrases = (cfg.beats || []).map((b) => b.phrase);
+  // Композиция, назначенная руками в бите: `{ phrase: 5, shot: 'circle' }`.
+  // Рычаг отката на весь приём — `compositions: 'off'` в конфиге: тогда ролик
+  // собирается ровно так же, как до появления новых типов кадра.
+  const shotByPhrase = cfg.compositions === 'off'
+    ? {}
+    : Object.fromEntries((cfg.beats || []).filter((b) => b.shot).map((b) => [b.phrase, b.shot]));
   const edl = buildEdl({
     words: aligned, runs, duration,
-    opts: { keywords: cfg.keywords || [], boxedPhrases: beatPhrases },
+    opts: { keywords: cfg.keywords || [], boxedPhrases: beatPhrases, shotByPhrase },
   });
   log(`вырезано тишины: ${edl.cut.toFixed(2)} сек → ролик ${edl.outDuration.toFixed(2)} сек`);
   log(`катов: ${edl.clips.length}  (${edl.clips.map((c) => c.shot).join(' → ')})`);
@@ -127,9 +134,16 @@ export async function run(configPath) {
   else log('звук: только дорожка исходника (музыка и озвучка не заданы)');
 
   // ── 5. Оверлей ──
+  // Окна композиций со спикером в рамке. Геометрия берётся из того же словаря, что
+  // и у базы: два независимых определения прямоугольника разъехались бы, и рамка
+  // поехала бы относительно картинки — это видно сразу.
   const boxes = edl.clips
-    .filter((c) => c.shot === 'boxed')
-    .map((c) => ({ t0: c.out.start, t1: c.out.end }));
+    .filter((c) => (SHOTS[c.shot] || {}).layout === 'boxed')
+    .map((c) => ({
+      t0: c.out.start, t1: c.out.end,
+      box: SHOTS[c.shot].box || BOX,
+      plate: SHOTS[c.shot].plate || null,
+    }));
 
   const proofs = [];
   const cards = [];
@@ -144,6 +158,24 @@ export async function run(configPath) {
     if (beat.takeover) takeovers.push({ ...win, ...beat.takeover });
   }
   if (takeovers.length) log(`титров-перекрытий: ${takeovers.length}`);
+
+  // ── Защита от клиповой каши ──
+  // Живое лицо держит доверие: это наш контент, а не чужой сток. Считаем, сколько
+  // ролика идёт без спикера — перекрытия и сгенерированные вставки — и предупреждаем.
+  // Не роняем: у человека может быть причина, но узнать он должен до публикации.
+  const faceless = [
+    ...takeovers.map((o) => ({ t0: o.t0, t1: o.t1 })),
+    ...(cfg.inserts || []).map((ins) => edl.phrases[ins.phrase]).filter(Boolean)
+      .map((p) => ({ t0: p.t0, t1: p.t1 })),
+  ].sort((a, b) => a.t0 - b.t0);
+  const facelessSec = faceless.reduce((sum, w) => sum + (w.t1 - w.t0), 0);
+  const share = facelessSec / edl.outDuration;
+  const longest = faceless.reduce((m, w) => Math.max(m, w.t1 - w.t0), 0);
+  if (faceless.length) {
+    log(`без лица в кадре: ${facelessSec.toFixed(1)} сек (${Math.round(share * 100)}%), самый долгий кусок ${longest.toFixed(1)} сек`);
+  }
+  if (share > 0.35) log(`⚠ больше трети ролика без спикера — ролик перестаёт быть вашим`);
+  if (longest > 3.0) log(`⚠ лицо пропадает дольше трёх секунд подряд — зритель теряет автора`);
 
   const cta = cfg.cta
     ? { t0: Math.max(0, edl.outDuration - (cfg.cta.hold || 2.0)), title: cfg.cta.title, sub: cfg.cta.sub }
@@ -201,6 +233,15 @@ export async function run(configPath) {
       '-q:v', '4', '-update', '1', path.join(lookDir, `t-${t.toFixed(1)}.jpg`)]);
   }
   log(`контрольные кадры: ${lookDir}`);
+
+  // ── Реестр разнообразия ──
+  // Пишем ПОСЛЕ успешной сборки: упавший прогон в историю попадать не должен.
+  const shots = edl.clips.map((c) => c.shot);
+  const themeName = typeof cfg.theme === 'string' ? cfg.theme : (cfg.theme?.preset || 'ikigai');
+  const history = await readRegistry();
+  const warns = sameness({ theme: themeName, shots }, history);
+  warns.forEach((w) => log(`⚠ похоже на прошлый выпуск: ${w}`));
+  await recordRelease({ name: cfg.name || 'reel', theme: themeName, shots, takeovers: takeovers.length });
 
   return { finalPath, edl };
 }

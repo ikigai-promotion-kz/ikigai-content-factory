@@ -107,11 +107,15 @@ if (dryRun) process.exit(0);
 // Порог применяется к главной метрике записи, а она у форматов разная (у видео
 // просмотры, у карусели лайки — см. поле metric). Поэтому дефолт порога для Apify
 // нулевой: сравнивать лайки карусели с просмотрами Reels бессмысленно.
-const filtered = found
+const filtered = withOutlierScore(found)
   .filter((r) => (r.views ?? 0) >= minViews)
   .filter((r) => !days || !r.date || ageDays(r.date) <= days)
   .filter((r) => matchFormat(r, wantFormat))
-  .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+  // Сортируем по отрыву от собственной медианы автора, а не по сырым просмотрам:
+  // иначе крупный канал всегда выглядит виральнее мелкого, хотя для СВОЕЙ аудитории
+  // его ролик может быть проходным. Нет медианы (автор в выдаче один раз) — падаем
+  // обратно на просмотры, чтобы порядок не рассыпался.
+  .sort((a, b) => (b.outlier ?? 0) - (a.outlier ?? 0) || (b.views ?? 0) - (a.views ?? 0))
   .slice(0, limit);
 
 if (!filtered.length) {
@@ -122,7 +126,7 @@ if (!filtered.length) {
 
 console.log(`Нашлось ${filtered.length} (из ${found.length} сырых):\n`);
 filtered.forEach((r, i) => {
-  console.log(`${String(i + 1).padStart(2)}. ${fmtNum(r.views)} ${r.metric}  ${r.platform}${r.kind ? '/' + r.kind : ''}  ${r.date || 'дата n/a'}  ${r.durationSec ? Math.round(r.durationSec) + ' сек' : ''}`);
+  console.log(`${String(i + 1).padStart(2)}. ${fmtNum(r.views)} ${r.metric}  ${outlierLabel(r)}  ${r.platform}${r.kind ? '/' + r.kind : ''}  ${r.date || 'дата n/a'}  ${r.durationSec ? Math.round(r.durationSec) + ' сек' : ''}`);
   console.log(`    ${r.title || '(без заголовка)'}`);
   console.log(`    ${r.url}${r.author ? '   · ' + r.author : ''}`);
 });
@@ -301,6 +305,46 @@ function na(v) { return !v || v === 'NA' ? null : v; }
 function isoDate(v) {
   if (!v || !/^\d{8}$/.test(v)) return null;
   return `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
+}
+
+/**
+ * Аутлаер-скор: во сколько раз ролик обогнал МЕДИАНУ СВОЕГО автора.
+ *
+ * Сырые просмотры сравнивают каналы, а не ролики: у миллионника проходной ролик
+ * наберёт больше, чем прорыв у маленького канала. Донора же мы ищем по приёму,
+ * который сработал сверх обычного для этой аудитории.
+ *
+ * Пороги, снятые с чужого разбора: 2× — заметно, 3–5× — сильный донор, 10× — редкий
+ * случай, который стоит разбирать целиком. Медиана считается по той же выдаче,
+ * дополнительных запросов не требует; при одном ролике автора скор не определён.
+ */
+function withOutlierScore(rows) {
+  const byAuthor = new Map();
+  for (const r of rows) {
+    const key = r.author || r.uploader || null;
+    if (!key || !(r.views > 0)) continue;
+    if (!byAuthor.has(key)) byAuthor.set(key, []);
+    byAuthor.get(key).push(r.views);
+  }
+  const medians = new Map();
+  for (const [key, list] of byAuthor) {
+    if (list.length < 3) continue;      // на двух роликах медиана — это просто второй ролик
+    const sorted = [...list].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    medians.set(key, sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2);
+  }
+  return rows.map((r) => {
+    const med = medians.get(r.author || r.uploader);
+    return med > 0 && r.views > 0 ? { ...r, outlier: r.views / med, medianViews: med } : r;
+  });
+}
+
+/** Колонка отрыва в выдаче. Без медианы честно пишем прочерк, а не выдуманное число. */
+function outlierLabel(r) {
+  if (!r.outlier) return '   —  ';
+  const x = r.outlier;
+  const mark = x >= 10 ? '★' : x >= 3 ? '↑' : x >= 2 ? '·' : ' ';
+  return `${mark}${x.toFixed(1)}×`.padStart(6);
 }
 
 function ageDays(iso) {

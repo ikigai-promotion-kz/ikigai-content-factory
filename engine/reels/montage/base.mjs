@@ -114,12 +114,18 @@ export async function renderBase({ src, srcW, srcH, clips, outPath, fps = 30, wo
         `${Math.round((even(W * 1.45) - W) / 2)}:${Math.round((even(H * 1.45) - H) * 0.35)},` +
         `boxblur=28:2,eq=brightness=-0.20:saturation=0.55[bgo${i}]`
       );
+      // Прямоугольник спикера берётся из самого шота: `boxed` держит прежние числа,
+      // а `circle` и `split` приносят свои. Раньше он был константой, и вся разница
+      // между композициями сводилась к проценту зума.
+      const box = shot.box || BOX;
       // Спикер: кроп под пропорции бокса из зоны лица. Окно считается от размеров
       // нормализованного кадра, поэтому на источнике 9:16 любого разрешения доля
       // кадра одна и та же — на 720×1280 выходит ровно то окно, что было до правки.
-      const cropH = even(nw * (BOX.h / BOX.w));
-      parts.push(`[fg${i}]crop=${nw}:${cropH}:0:${Math.round((nh - cropH) * boxCropY)},scale=${BOX.w}:${BOX.h}:flags=lanczos[fgo${i}]`);
-      parts.push(`[bgo${i}][fgo${i}]overlay=${BOX.x}:${BOX.y},setsar=1[v${i}]`);
+      // Для квадратного и широкого окна кроп может оказаться выше кадра — тогда
+      // берём максимум, что есть, иначе ffmpeg падает на отрицательном смещении.
+      const cropH = even(Math.min(nh, nw * (box.h / box.w)));
+      parts.push(`[fg${i}]crop=${nw}:${cropH}:0:${Math.round(Math.max(0, nh - cropH) * boxCropY)},scale=${box.w}:${box.h}:flags=lanczos[fgo${i}]`);
+      parts.push(`[bgo${i}][fgo${i}]overlay=${box.x}:${box.y},setsar=1[v${i}]`);
     } else {
       const geo = geometry(shot, dur, c.phase);
       parts.push(`${cut},scale=${geo.sw}:${geo.sh}:flags=lanczos,crop=${W}:${H}:${geo.x}:${geo.y},setsar=1[v${i}]`);

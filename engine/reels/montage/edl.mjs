@@ -37,6 +37,23 @@ export const SHOTS = {
    * композиции кадра работает сильнее, чем ещё один процент зума.
    */
   boxed: { layout: 'boxed' },
+  /**
+   * Кружок-врезка: спикер маленьким кругом в углу, остальные три четверти кадра
+   * свободны под контент. Третий тип композиции из шести чужих — и самый заметный
+   * после полноэкранного титра.
+   *
+   * `plate` означает, что оверлей закроет кадр непрозрачной плитой с вырезанным
+   * окном ровно по этому прямоугольнику. Классический `boxed` плиты не получает —
+   * иначе принятые ролики сменили бы вид.
+   */
+  // Правый край окна — 920 px, а не у самой кромки: справа 150 px занимает колонка
+  // кнопок Instagram, и прижатый к краю кружок наполовину ушёл бы под них.
+  circle: { layout: 'boxed', box: { x: 540, y: 240, w: 380, h: 380 }, plate: 'circle' },
+  /**
+   * Сплит-экран: спикер занимает верхнюю половину кадра во всю ширину, нижняя
+   * половина уходит под титр или пруф. Даёт кадр, в котором текст не спорит с лицом.
+   */
+  split: { layout: 'boxed', box: { x: 0, y: 210, w: 1080, h: 900 }, plate: 'rect' },
 };
 
 /** Порядок чередования крупностей. Соседние никогда не совпадают. */
@@ -62,7 +79,14 @@ const ACCENTS = ['tight', 'tightUp', 'tightSide'];
  * @returns {{keeps:Array,clips:Array,phrases:Array,words:Array,outDuration:number,cut:number}}
  */
 export function buildEdl({ words, runs, duration, opts = {} }) {
-  const { air = 0.12, maxChars = 26, maxShot = 3.2, keywords = [], boxedPhrases = [] } = opts;
+  const { air = 0.12, maxChars = 26, maxShot = 3.2, keywords = [], boxedPhrases = [], shotByPhrase = {} } = opts;
+  // Заданный руками тип кадра проверяем здесь, до всей арифметики: опечатка в имени
+  // композиции обязана уронить прогон сразу, а не выдать молча обычную крупность.
+  for (const [pi, name] of Object.entries(shotByPhrase)) {
+    if (!SHOTS[name]) {
+      throw new Error(`фраза #${pi}: композиции «${name}» не существует. Есть: ${Object.keys(SHOTS).join(', ')}`);
+    }
+  }
 
   // ── 1. Что оставляем от исходника ──
   const keeps = mergeKeeps(runs.map((r) => ({
@@ -87,7 +111,10 @@ export function buildEdl({ words, runs, duration, opts = {} }) {
   let accentIdx = 0;
   phrases.forEach((p, pi) => {
     const span = p.t1 - p.t0;
-    const boxed = boxedPhrases.includes(pi);
+    // Композицию можно назначить руками (`shot` в бите) — тогда автоподбор крупности
+    // на эту фразу не работает: режиссёрское решение сильнее чередования.
+    const forced = shotByPhrase[pi];
+    const boxed = forced ? SHOTS[forced].layout === 'boxed' : boxedPhrases.includes(pi);
     const hasKey = p.words.some((w) => w.key);
     // Боксовая сцена не дробится: композиция кадра не должна дёргаться под пруфом.
     const parts = !boxed && span > maxShot ? Math.ceil(span / maxShot) : 1;
@@ -95,16 +122,18 @@ export function buildEdl({ words, runs, duration, opts = {} }) {
       shots.push({
         t0: p.t0 + (span * i) / parts,
         t1: p.t0 + (span * (i + 1)) / parts,
-        name: boxed ? 'boxed' : pickShot(shots.length, shots.at(-1)?.name, hasKey, accentIdx),
+        name: forced || (boxed ? 'boxed' : pickShot(shots.length, shots.at(-1)?.name, hasKey, accentIdx)),
         phrase: pi,
       });
       if (hasKey && !boxed) accentIdx += 1;
     }
   });
   // Первый кадр — всегда лицо крупно: правило «панель 1 = спикер-хук».
-  if (shots.length && shots[0].name !== 'boxed') shots[0].name = 'tight';
+  // Назначенную руками композицию не переписываем — это решение человека.
+  const free = (s) => s && SHOTS[s.name]?.layout !== 'boxed' && !(s.phrase in shotByPhrase);
+  if (free(shots[0])) shots[0].name = 'tight';
   // Хвост не должен обрываться на проезде — финал статичный, под CTA-титр.
-  if (shots.length > 1 && shots.at(-1).name !== 'boxed') {
+  if (shots.length > 1 && free(shots.at(-1))) {
     shots.at(-1).name = shots.at(-2).name === 'mid' ? 'wide' : 'mid';
   }
 

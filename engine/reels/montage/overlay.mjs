@@ -120,7 +120,7 @@ const PRESETS = {
     accent: '#F5A623',
     cardBg: '#000000', cardText: '#FFFFFF', cardSub: '#9A9A9A',
     capBg: '#000000', capText: '#FFFFFF',
-    sceneBg: 'rgba(0,0,0,.94)', frameColor: '#000000',
+    sceneBg: 'rgba(0,0,0,.94)', frameColor: '#000000', plateBg: '#000000',
     radiusCard: '6px', radiusCap: '6px', radiusHook: '2px',
   },
   // Неон-тех: тёмно-синяя база, циановый акцент. Под технические темы.
@@ -128,7 +128,7 @@ const PRESETS = {
     accent: '#38E1FF',
     cardBg: '#0A0F1E', cardText: '#EAF6FF', cardSub: '#7E94AD',
     capBg: '#0A0F1E', capText: '#EAF6FF',
-    sceneBg: 'rgba(10,15,30,.94)', sceneSub: '#7E94AD', frameColor: '#0A0F1E',
+    sceneBg: 'rgba(10,15,30,.94)', sceneSub: '#7E94AD', frameColor: '#0A0F1E', plateBg: '#0A0F1E',
   },
   // Минимал-люкс: много воздуха, чёрная типографика, один алый акцент.
   'minimal-lux': {
@@ -136,7 +136,7 @@ const PRESETS = {
     cardBg: '#FAFAF8', cardText: '#111111', cardSub: '#6E6E6E',
     capBg: '#FAFAF8', capText: '#111111',
     sceneBg: 'rgba(250,250,248,.95)', sceneText: '#111111', sceneSub: '#6E6E6E',
-    frameColor: '#FAFAF8', radiusCard: '2px', radiusCap: '2px', radiusHook: '0px',
+    frameColor: '#FAFAF8', plateBg: '#FAFAF8', radiusCard: '2px', radiusCap: '2px', radiusHook: '0px',
   },
   // Editorial-бумага: кремовая бумага и терракота. Родня нашим гайдам.
   editorial: {
@@ -144,7 +144,7 @@ const PRESETS = {
     cardBg: '#F7F2E8', cardText: '#231C16', cardSub: '#7A6A5A',
     capBg: '#F7F2E8', capText: '#231C16',
     sceneBg: 'rgba(247,242,232,.95)', sceneText: '#231C16', sceneSub: '#7A6A5A',
-    frameColor: '#F7F2E8', radiusCard: '10px', radiusCap: '10px', radiusHook: '4px',
+    frameColor: '#F7F2E8', plateBg: '#F7F2E8', radiusCard: '10px', radiusCap: '10px', radiusHook: '4px',
   },
   // Телеграм-синий: под скриншоты переписок и чат-мокапы.
   telegram: {
@@ -160,7 +160,7 @@ const PRESETS = {
     cardBg: '#EFEAE0', cardText: '#151310', cardSub: '#5F594F',
     capBg: '#EFEAE0', capText: '#151310',
     sceneBg: 'rgba(239,234,224,.95)', sceneText: '#151310', sceneSub: '#5F594F',
-    frameColor: '#EFEAE0', radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
+    frameColor: '#EFEAE0', plateBg: '#EFEAE0', radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
   },
 };
 
@@ -185,6 +185,7 @@ const THEME_KEYS = {
   sceneText: '--scene-text',
   sceneSub: '--scene-sub',
   sceneImage: '--scene-image',
+  plateBg: '--plate-bg',
 };
 
 /** Экраны, которые умеет рисовать перекрытие. Список один и здесь, и в шаблоне. */

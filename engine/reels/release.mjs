@@ -206,6 +206,8 @@ if (videoPath) {
 
 // ── Раскладка по площадкам ──
 const problems = [];
+// Советы по тексту: подпись формально проходит лимит, но работает вполсилы.
+const advice = [];
 const report = [];
 
 const usedPlatforms = [];
@@ -267,6 +269,14 @@ for (const base of PLATFORMS) {
   for (const bad of (t.hashtags || []).filter((h) => /\s/.test(h.trim()))) {
     problems.push(`${p.name}: хештег «${bad}» с пробелом — площадка обрежет его по первому слову`);
   }
+  for (const warn of captionWarnings(t.caption || t.description || '', p.name)) advice.push(warn);
+}
+
+// Замечания к тексту — не то же самое, что превышение лимита: лимит площадка
+// накажет механически, а слабую подпись — молча. Поэтому они советы, а не блокировка.
+if (advice.length) {
+  console.log('\nК ТЕКСТУ (не блокирует выпуск):');
+  [...new Set(advice)].forEach((a) => console.log(`  • ${a}`));
 }
 
 await writeFile(path.join(outDir, 'README.txt'), buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems, usedPlatforms }), 'utf8');
@@ -299,6 +309,32 @@ function withTags(t) {
 }
 
 /** Считаем хештеги в готовом тексте, а не в массиве: часть их пишут прямо в подпись. */
+/**
+ * Формула подписи — проверяемая часть.
+ *
+ * Первые 125 знаков решают: дальше площадка прячет текст под «ещё», и до второго
+ * абзаца доходят единицы. Призыв должен быть ровно один — «два призыва равны нулю
+ * призывов». Остальное (личный опыт от первого лица, живая интонация) машиной не
+ * измеряется и живёт в скилле, где текст пишет Claude.
+ *
+ * Это советы, а не блокировка: подпись может сознательно нарушать правило.
+ */
+function captionWarnings(caption, platform) {
+  const text = String(caption).trim();
+  if (!text) return [];
+  const out = [];
+  const head = [...text].slice(0, 125).join('');
+  // Смысл в первых 125 знаках: если там нет ни точки, ни вопроса, ни восклицания —
+  // мысль не закончена, и в ленте видно обрывок.
+  if (!/[.!?…]/.test(head) && [...text].length > 125) {
+    out.push(`${platform}: в первых 125 знаках нет законченной мысли — в ленте будет виден обрывок`);
+  }
+  const calls = (text.match(/(напиши|пиши|переходи|подпишись|забирай|забери|жми|ставь|оставь|regis|ссылк[аи])/gi) || []).length;
+  if (calls > 1) out.push(`${platform}: призывов в тексте ${calls} — два призыва равны нулю призывов, оставить один`);
+  if (calls === 0) out.push(`${platform}: призыва нет вовсе — читатель дочитал и не знает, что делать`);
+  return out;
+}
+
 function countTags(text) {
   return (text.match(/#[\p{L}\p{N}_]+/gu) || []).length;
 }
