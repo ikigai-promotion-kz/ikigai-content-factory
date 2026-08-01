@@ -27,9 +27,19 @@ const REQUIRED = {
   ffprobe: 'идёт в одной поставке с ffmpeg',
 };
 
-/** Полезно, но монтаж своего видео работает и без этого. */
+/**
+ * Для монтажа своего видео не нужны, но нужны для соседних шагов.
+ *
+ * Формулировка «нужен для скачивания чужих роликов» была неверной и стоила бы
+ * человеку сорванного шага: поиск виралок (reels/scout/ig-scout.mjs) зовёт yt-dlp
+ * для САМОГО поиска, а не только для скачивания. Тот, кто доверился зелёной
+ * проверке, упирался бы в ошибку прямо посреди занятия.
+ */
 const OPTIONAL = {
-  'yt-dlp': WIN ? 'winget install yt-dlp.yt-dlp' : 'brew install yt-dlp',
+  'yt-dlp': {
+    install: WIN ? 'winget install yt-dlp.yt-dlp' : 'brew install yt-dlp',
+    why: 'поиск виралок и скачивание чужих роликов. Без него блок «виралки» не запустится',
+  },
 };
 
 const FILES = {
@@ -71,10 +81,11 @@ for (const [tool, hint] of Object.entries(REQUIRED)) {
 }
 
 // ── Необязательные ──
-console.log('\nПрограммы (по желанию):');
-for (const [tool, hint] of Object.entries(OPTIONAL)) {
+console.log('\nПрограммы (нужны не для монтажа, а для соседних шагов):');
+for (const [tool, { install, why }] of Object.entries(OPTIONAL)) {
   const bin = await resolveBin(tool);
-  console.log(bin ? `  ✓ ${tool}` : `  · ${tool} — нет. Нужен для скачивания чужих роликов: ${hint}`);
+  if (bin) console.log(`  ✓ ${tool}`);
+  else console.log(`  · ${tool} — нет. ${why}. Ставится так: ${install}`);
 }
 
 // ── Браузер для титров ──
@@ -101,10 +112,13 @@ for (const [rel, hint] of Object.entries(FILES)) {
 }
 
 // ── Ключи: для монтажа не нужны, для генерации нужны ──
-console.log('\nКлючи (для монтажа НЕ нужны, нужны для картинок и транскрипта):');
+console.log('\nКлючи (для монтажа НЕ нужны, нужны для картинок, музыки и транскрипта):');
 const KEYS = {
   OPENAI_API_KEY: 'платная расшифровка речи (~$0.006 за минуту). Не обязателен — есть бесплатная: node reels/transcribe-local.mjs',
-  FAL_KEY: 'генерация картинок топ-моделями',
+  // Тот же ключ отвечает и за музыку в ролике (fal-ai/elevenlabs/music). Раньше здесь
+  // было только про картинки — и человек на шаге «звук» узнавал о нужном ключе
+  // в тот момент, когда уже поздно.
+  FAL_KEY: 'генерация картинок топ-моделями И музыки для ролика (fal-ai/elevenlabs/music)',
 };
 for (const [key, what] of Object.entries(KEYS)) {
   console.log(process.env[key] ? `  ✓ ${key}` : `  · ${key} — не задан. Нужен для: ${what}`);
