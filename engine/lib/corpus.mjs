@@ -426,22 +426,72 @@ const BUILDERS = {
   video: buildVideoCorpus, // ролик: движение, монтаж, шоты
 };
 
+/**
+ * Оглавление каталога стилей — ВСЕ, а не topN под тему.
+ *
+ * Заведено 01.08.2026 по вопросу студента «сколько у меня стилей». Ответ вышел
+ * «десять»: команда `art` по построению отдаёт три кандидата (getStyles topN=3),
+ * полного списка не показывал НИКТО, и агент посчитал стили по тегам эталонов —
+ * то есть те, что уже обкатаны, а не те, что доступны. Каталог всё это время
+ * лежал на диске целиком.
+ *
+ * Здесь намеренно только заголовок и строка «когда брать»: цель — чтобы человек
+ * увидел ассортимент и заказал стиль по имени. Полный профиль со всеми токенами
+ * по-прежнему подтягивает `art` под конкретную тему.
+ */
+async function listStyles() {
+  const styles = await loadStyles();
+  const rows = styles.map((s) => ({
+    heading: (s.text.match(/^##\s+(.+)$/m) || [, '—'])[1].trim(),
+    when: (firstBullet(s.text, 'Когда брать') || firstBullet(s.text, 'Когда') || '')
+      .replace(/\s+/g, ' ').trim(),
+  }));
+  const lines = rows.map((r, i) => {
+    const num = String(i + 1).padStart(2, ' ');
+    return r.when ? `${num}. ${r.heading}\n     ${r.when}` : `${num}. ${r.heading}`;
+  });
+  return [
+    `# КАТАЛОГ СТИЛЕЙ — ${rows.length} позиций`,
+    '',
+    'Это ВЕСЬ ассортимент фабрики. Заказывать можно по имени: «сделай в стиле …».',
+    'Команда `art "<тема>"` показывает не весь каталог, а три кандидата под конкретную',
+    'тему — это разные вопросы, не путайте их между собой.',
+    '',
+    ...lines,
+    '',
+    'Источник: reference/_STYLES/STYLES.md — там у каждого стиля полный профиль:',
+    'палитра, типографика, layout, модель-исполнитель, ключевой приём и риск.',
+  ].join('\n');
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [, , mode, ...rest] = process.argv;
   const query = rest.join(' ').trim();
 
-  if (!BUILDERS[mode] || !query) {
-    console.error('Использование: node lib/corpus.mjs <art|story|video> "<тема>"');
+  // styles — единственный режим без темы: он про ассортимент, а не про задачу.
+  if (mode === 'styles') {
+    listStyles()
+      .then((block) => { console.log(block); })
+      .catch((e) => {
+        console.error('ОШИБКА:', e.message);
+        console.error('Проверьте, что файл engine/reference/_STYLES/STYLES.md на месте.');
+        process.exit(1);
+      });
+  } else if (!BUILDERS[mode] || !query) {
+    console.error('Использование: node lib/corpus.mjs <styles|art|story|video> ["<тема>"]');
     console.error('');
-    console.error('  art    — знания под ВИЗУАЛ: стили, форматы слайдов, палитра, анти-паттерны');
+    console.error('  styles — ВЕСЬ каталог стилей списком. Темы не требует');
+    console.error('  art    — знания под ВИЗУАЛ под ТЕМУ: три стиля-кандидата, форматы, палитра');
     console.error('  story  — знания под СМЫСЛ: структура карусели, хуки, что даёт сохранения');
     console.error('  video  — знания под РОЛИК: движение, монтаж, свет, звук, словарь шотов');
     console.error('');
+    console.error('Хотите увидеть, ЧТО вообще есть — это styles.');
+    console.error('Хотите подобрать под конкретную тему — это art.');
+    console.error('');
+    console.error('Пример: node lib/corpus.mjs styles');
     console.error('Пример: node lib/corpus.mjs art "запуск курса по бухучёту для малого бизнеса"');
     process.exit(1);
-  }
-
-  BUILDERS[mode](query)
+  } else BUILDERS[mode](query)
     .then((block) => { console.log(block); })
     .catch((e) => {
       console.error('ОШИБКА:', e.message);
