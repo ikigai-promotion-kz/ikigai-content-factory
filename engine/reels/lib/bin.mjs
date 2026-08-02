@@ -20,7 +20,7 @@ const exec = promisify(execFile);
 const _cache = new Map();
 
 // Флаг проверки версии отличается: ffmpeg/ffprobe понимают -version, yt-dlp — только --version.
-const VERSION_FLAG = { 'yt-dlp': '--version' };
+const VERSION_FLAG = { 'yt-dlp': '--version', higgsfield: '--version' };
 // Имя пакета, в поставке которого лежит инструмент (ffprobe приходит вместе с ffmpeg).
 const PACKAGE_OF = { ffprobe: 'ffmpeg' };
 
@@ -44,8 +44,12 @@ function candidateDirs(tool) {
       dirs.push(pkgDir);
     }
     dirs.push('C:/ProgramData/chocolatey/bin', path.join(home, 'scoop/shims'));
+    // Глобальные пакеты npm. Сюда ставится higgsfield и вообще всё, что через npm i -g:
+    // без этой строки проверка окружения говорила «программы нет», хотя она работала.
+    dirs.push(path.join(home, 'AppData/Roaming/npm'));
   } else {
     dirs.push('/usr/local/bin', '/usr/bin', '/opt/homebrew/bin', path.join(home, '.local/bin'));
+    dirs.push(path.join(home, '.npm-global/bin'), '/usr/local/lib/node_modules/.bin');
   }
   return dirs;
 }
@@ -71,12 +75,19 @@ export async function resolveBin(tool) {
   } catch { /* ищем дальше */ }
 
   // 2. Типовые места установки.
-  const exe = process.platform === 'win32' ? `${tool}.exe` : tool;
+  // На Windows искали только .exe — а всё, что ставится через npm (higgsfield и ему
+  // подобные), лежит как .cmd рядом с .ps1. Из-за этого проверка окружения говорила
+  // «программы нет», когда она стояла и работала.
+  const names = process.platform === 'win32'
+    ? [`${tool}.exe`, `${tool}.cmd`, `${tool}.bat`, tool]
+    : [tool];
   for (const dir of candidateDirs(tool)) {
-    const full = path.join(dir, exe);
-    if (existsSync(full)) {
-      _cache.set(tool, full);
-      return full;
+    for (const name of names) {
+      const full = path.join(dir, name);
+      if (existsSync(full)) {
+        _cache.set(tool, full);
+        return full;
+      }
     }
   }
 

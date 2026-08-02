@@ -245,10 +245,23 @@ const usedPlatforms = [];
 for (const base of PLATFORMS) {
   const t = cfg.texts[base.key] || (base.key === 'carousel' && cfg.texts.instagram ? cfg.texts.instagram : null);
   if (!t) { console.log(`\n${base.name}: пропущено — в конфиге нет texts.${base.key}`); continue; }
-  if (base.slides && !slides.length) { console.log(`\n${base.name}: пропущено — слайды не переданы`); continue; }
+  // Текст написан именно под эту площадку — значит человек её заказывал. Молча
+  // пропустить заказанное и отрапортовать «ГОТОВО» нельзя: публикатор честно выложит
+  // пакет без карусельного поста, и узнается это уже в ленте.
+  const ordered = Object.prototype.hasOwnProperty.call(cfg.texts, base.key);
+
+  if (base.slides && !slides.length) {
+    console.log(`\n${base.name}: пропущено — слайды не переданы`);
+    if (ordered) problems.push(`${base.name}: текст написан, а слайды не переданы — пост не соберётся`);
+    continue;
+  }
 
   const videoMissing = Boolean(base.video) && !videoPath;
-  if (videoMissing && !base.textOnly) { console.log(`\n${base.name}: пропущено — ролик не передан`); continue; }
+  if (videoMissing && !base.textOnly) {
+    console.log(`\n${base.name}: пропущено — ролик не передан`);
+    if (ordered) problems.push(`${base.name}: текст написан, а ролик не передан — пост не соберётся`);
+    continue;
+  }
   // Площадка без ролика публикуется по своим правилам: другой файл, лимит и порядок.
   const p = videoMissing ? { ...base, ...base.textOnly } : base;
   usedPlatforms.push(p);

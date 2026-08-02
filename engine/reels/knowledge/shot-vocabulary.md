@@ -27,6 +27,26 @@
 | `MATCH-CUT` | Переход по жесту спикера в графику | Щелчок, взмах — склейка «без шва» |
 | `FULLSCREEN SPEAKER PUSH IN WARM` | Спикер, тёплый свет, наезд | Прощание, CTA |
 
+## Что из этого умеет бесплатный монтаж (31.07.2026)
+
+Перечень типов сверен с рабочим методом-первоисточником: совпадает один в один,
+включая назначение каждого типа.
+
+Реализовано оверлеем, без единого кредита — **шесть из тринадцати**:
+
+| Тип | Как заказать |
+|---|---|
+| `FULLSCREEN SPEAKER PUSH IN` / `FULLSCREEN SPEAKER` | крупности `tight`, `mid`, `wide`, `drift` — подбираются сами |
+| `CONTENT WITH CIRCLE` | `shot: 'circle'` |
+| `TOP-SPLIT` | `shot: 'split'` |
+| `FULLSCREEN CONTENT NO SPEAKER` | `takeover` на бите |
+| `TERMINAL INSERT` | `takeover.screen.kind: 'terminal'` |
+| `PHONE MOCKUP` | `takeover.screen.kind: 'phone'` |
+
+Не реализовано: `SPLIT-SCREEN L/R`, `ZOOM-OUT REVEAL`, `DATA-COUNTER`, `QUOTE-CARD`,
+`MATCH-CUT`, `PUSH IN WARM`. Первые четыре — чистый оверлей, то есть дешёвые; `MATCH-CUT`
+требует распознавания жеста и остаётся ручным приёмом.
+
 ## Правила драматургии
 
 - **Панель 1 всегда спикер-хук.** Первый кадр — лицо и первая фраза, не заставка и не логотип.
