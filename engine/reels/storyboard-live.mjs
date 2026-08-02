@@ -149,7 +149,16 @@ const params = montageParams({
 console.log(`  модель ${params.model} · ${params.duration}с · ${params.aspect_ratio} · медиа ${params.medias.length}`);
 
 console.log('\nШАГ 6 — preflight(): гейт перед тратой');
-const gate = preflight(params, { prompt, refs: params.medias.length, duration: params.duration });
+// Гейт сверяет собранное с ЗАКАЗАННЫМ, а не с самим собой. Раньше сюда уходили
+// params.medias.length и params.duration — то есть уже обрезанные значения сравнивались
+// сами с собой, и заказ «14 секунд, 7 кадров», молча ставший «10 секунд, 6 файлов»,
+// проходил гейт зелёным. Ожидание считается от исходного заказа.
+// Ожидание берётся из ЗАМЫСЛА, а не из собранных параметров:
+//  · медиа ровно два — кусок видео и картинка-борд (кадры ушли в борд, не в монтаж);
+//  · слот равен длине куска. Кусок длиннее модельного максимума → гейт скажет об этом,
+//    и это честное предупреждение: модель обрежет хвост, мы это видели на прогоне.
+const WANT_MEDIAS = 2;
+const gate = preflight(params, { prompt, refs: WANT_MEDIAS, duration: Math.round(seg.duration) });
 console.log(`  ${gate.summary}`);
 console.log(`  ${gate.ok ? 'ГЕЙТ ПРОЙДЕН' : 'ГЕЙТ НЕ ПРОЙДЕН'}`);
 gate.problems.forEach((p) => console.log(`   ✗ ${p}`));
@@ -157,7 +166,27 @@ gate.problems.forEach((p) => console.log(`   ✗ ${p}`));
 const promptFile = path.join(outDir, 'montage-prompt.txt');
 await writeFile(promptFile, prompt, 'utf8');
 
-console.log('\nШАГ 7 — две команды, обе тратят кредиты. Запускать по порядку:');
+// Гейт, после которого всё равно печатаются платные команды, — не гейт, а надпись.
+if (!gate.ok) {
+  console.log('\nПлатные команды НЕ печатаю: сначала устраните замечания выше.');
+  console.log(`Промпты сохранены: ${boardFile} и ${promptFile} — их можно посмотреть и поправить.`);
+  process.exit(2);
+}
+
+console.log('\nШАГ 7 — две генерации, обе тратят кредиты. Путь зависит от того, как у вас подключён Higgsfield.');
+
+console.log('\n  ПУТЬ А — КОННЕКТОР в приложении Claude (так у большинства).');
+console.log('  Агент делает это сам инструментами коннектора, команды печатать не нужно:');
+console.log(`    1. Загрузить файлы и получить media_id: ${frames.map((f) => path.basename(f)).join(', ')} и ${path.basename(cut)}.`);
+console.log(`    2. generate_image · модель gpt_image_2 · промпт из ${boardFile}`);
+console.log(`       медиа: ${frames.length} кадров ролью image_references · 9:16 · 2k`);
+console.log('       → СКАЧАТЬ и ПОСМОТРЕТЬ ГЛАЗАМИ, только потом дальше');
+console.log(`    3. generate_video · модель ${params.model} · промпт из ${promptFile}`);
+console.log(`       медиа: ${path.basename(cut)} ролью video_references + борд ролью image_references`);
+console.log(`       длительность ${params.duration} · ${params.aspect_ratio} · ${params.resolution}`);
+
+console.log('\n  ПУТЬ Б — КОМАНДНАЯ СТРОКА higgsfield (если установлена отдельно).');
+console.log('  Проверить: higgsfield account status. Отвечает «command not found» — идите путём А.');
 console.log('\n  1) собрать борд (≈7 кр) и ПОСМОТРЕТЬ ЕГО ГЛАЗАМИ до второго шага:');
 console.log([
   `  higgsfield generate create gpt_image_2`,

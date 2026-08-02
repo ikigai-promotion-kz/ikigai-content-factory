@@ -12,7 +12,7 @@ import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
-import { resolveBin } from './lib/bin.mjs';
+import { resolveBin, runBin } from './lib/bin.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));   // папка engine/
 const WIN = process.platform === 'win32';
@@ -77,6 +77,44 @@ for (const [tool, hint] of Object.entries(REQUIRED)) {
     // окно уже открыто и не видит новый PATH. Перезапуск приложения это лечит.
     console.log(`  ⚠ ${tool} — найден мимо PATH: ${bin}`);
     warnings.push(`${tool} вне PATH (перезапустите приложение)`);
+  }
+}
+
+// ── Фильтр whisper внутри ffmpeg ──
+// Проверка «ffmpeg отвечает на запрос версии» ничего не говорит о том, умеет ли он
+// расшифровывать речь: фильтр whisper появился в ffmpeg 8 и есть не во всех сборках.
+// Студент с ffmpeg 6 или 7, поставленным когда-то для другого софта, получал зелёную
+// проверку и падение «No such filter: whisper» на первом же шаге любого сценария.
+console.log('\nРасшифровка речи (фильтр whisper внутри ffmpeg):');
+try {
+  const res = await runBin('ffmpeg', ['-hide_banner', '-filters']);
+  const out = typeof res === 'string' ? res : `${res?.stdout ?? ''}${res?.stderr ?? ''}`;
+  if (/(^|\s)whisper(\s|$)/m.test(out)) {
+    console.log('  ✓ фильтр whisper на месте — расшифровка будет бесплатной');
+  } else {
+    console.log('  ✗ фильтра whisper нет в этой сборке ffmpeg');
+    console.log('     Бесплатная расшифровка (reels/transcribe-local.mjs) не запустится.');
+    console.log(`     Нужен ffmpeg 8 или новее. Ставится так: ${REQUIRED.ffmpeg}`);
+    missing.push('фильтр whisper в ffmpeg');
+  }
+} catch {
+  console.log('  · не смог опросить фильтры ffmpeg — проверьте его установку выше');
+}
+
+// ── Чем дотягиваемся до Higgsfield ──
+// Ветка стилей (скилл reels-styles) печатает два пути. Через коннектор работает всегда,
+// через командную строку — только если она установлена отдельно. Раньше проверка про
+// это молчала, и студент узнавал о нехватке в момент, когда уже готов тратить кредиты.
+console.log('\nHiggsfield (нужен только для платных веток — стили, озвучка, картинки):');
+{
+  const cli = await resolveBin('higgsfield');
+  if (cli) {
+    console.log('  ✓ командная строка higgsfield установлена — доступны оба пути');
+  } else {
+    console.log('  · командной строки higgsfield нет — это нормально');
+    console.log('     Работайте через коннектор в приложении Claude:');
+    console.log('     Customize → Connectors → https://mcp.higgsfield.ai/mcp');
+    console.log('     Скрипты печатают оба пути, коннекторный идёт первым.');
   }
 }
 

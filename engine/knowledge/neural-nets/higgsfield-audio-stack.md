@@ -117,7 +117,7 @@
 ## 8. Грабли (сводка)
 
 - **RU не гарантирован** ни у одного из 5 `text2speech_v2`, кроме подтверждённых Eleven v3, CosyVoice и Inworld. MiniMax/Seed Speech/VibeVoice — `⚠ проверить в MCP` перед RU-продакшном.
-- `seed_audio` — **EN/ZH only**, русский текст не прогонять.
+- `seed_audio` — **русский держит дословно**, проверено 02.08.2026 обратной расшифровкой: фраза вернулась слово в слово, цена 0,5–0,9 кредита. Прежняя запись «EN/ZH only, русский не прогонять» была выведена по бенчмаркам, а не по прогону, и оказалась неверной.
 - Клонирование требует **явного consent** (юр-риск для КП).
 - Лимит кастомных голосов ~3 — при батче разных персонажей может не хватить, проверять тариф.
 - `dubbing` и общий TTS/клон имеют **разные списки языков** (10 vs 74+) — не полагаться на «74+» для dubbing-с-lipsync.
@@ -137,7 +137,7 @@
 | Куда встроить | Что конкретно добавить |
 |---|---|
 | **`knowledge/video-craft.md` §M10/M11** (озвучка/дубляж роликов) | кросс-ссылка на этот файл; правило «нативный аудио видео-модели > отдельный TTS+lipsync»; таблица §6 |
-| **`model-router`** | правило выбора TTS: RU-эмоция → `text2speech_v2:elevenlabs`; RU-бюджет/клон → `cozy_voice`; RU-быстрый realtime → `inworld_text_to_speech` (Svetlana/Elena/Dmitry/Nikolai); EN/ZH sound-design → `seed_audio`; НЕ давать `seed_audio` на русский текст |
+| **`model-router`** | правило выбора TTS: RU-эмоция → `text2speech_v2:elevenlabs`; RU-бюджет/клон → `cozy_voice`; RU-быстрый realtime → `inworld_text_to_speech` (Svetlana/Elena/Dmitry/Nikolai); EN/ZH sound-design → `seed_audio`; `seed_audio` русский держит дословно (прогон 02.08.2026), его тоже можно |
 | **`art-director.md` / creo-formats** | флаг: карусель = без звука; при экспорте в Reels активировать audio-ветку |
 | **client-safety / КП-канон** | правило consent для `create_voice` — не клонировать реальных людей без разрешения |
 
