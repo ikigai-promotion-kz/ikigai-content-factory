@@ -6,11 +6,9 @@
     "Название карточки != slug. Ориентир — slug.",
     "Каждый ключ можно переопределить env-переменной из поля env, не трогая код."
   ],
-
   "image": {
     "_default": "nano-banana",
     "_pro": "nano-banana-pro",
-
     "nano-banana": {
       "model": "fal-ai/nano-banana",
       "edit": "fal-ai/nano-banana/edit",
@@ -59,30 +57,55 @@
       "note": "Родной бэкенд — Higgsfield Soul ID (держит лицо без переописания)."
     }
   },
-
   "video": {
     "_default": "seedance",
     "_comment": "Видео-роутинг заведён 28.07.2026 под Reels-конвейер. Модели живут в Higgsfield MCP; поле model — идентификатор для generate_video, а не fal-slug. Каталог: knowledge/neural-nets/higgsfield-video-models.md",
-
+    "omni": {
+      "model": "gemini_omni",
+      "backend": "higgsfield-cli",
+      "duration": [
+        4,
+        10
+      ],
+      "refs": {
+        "image": 5,
+        "video": 1
+      },
+      "intent": "монтаж живого дубля по сториборду: картинка-борд + кусок видео",
+      "note": "Модель автора метода (Gemini Omni Flash). Он ходит в неё через Google Flow и Chrome CDP; у нас она же есть одной командой CLI, поэтому его аппарат с портом 9222, режимом Ingredients и кредит-гардом не нужен. Контракт: ровно 1 video_references + до 5 image_references. Seedance на этой задаче прогнан 02.08.2026 и провалился — стёр лицо на 4 сек из 10 и напечатал титры кракозяброй."
+    },
     "seedance": {
       "model": "seedance_2_0",
       "backend": "higgsfield-mcp",
-      "duration": [4, 15],
-      "refs": { "image": 9, "video": 3, "audio": 3 },
+      "duration": [
+        4,
+        15
+      ],
+      "refs": {
+        "image": 9,
+        "video": 3,
+        "audio": 3
+      },
       "intent": "монтаж по сториборду, reference-driven лидер",
       "note": "До 12 референсов за проход, модель сама читает роль каждого. Frame-level консистентность лиц и стиля. Основная рабочая модель Reels-монтажа."
     },
     "wan": {
       "model": "wan2_6",
       "backend": "higgsfield-mcp",
-      "duration": [5, 15],
+      "duration": [
+        5,
+        15
+      ],
       "intent": "video reference & style transfer, переснять сцену сохранив перформанс референса",
       "note": "Native audio + phoneme-level lip-sync. Самый input-dependent — слабее всех без референса."
     },
     "kling-edit": {
       "model": "kling_o1_edit",
       "backend": "higgsfield-mcp",
-      "duration": [3, 10],
+      "duration": [
+        3,
+        10
+      ],
       "intent": "пост-правка готового клипа: relight, object swap, reframe, clean-up",
       "note": "Вместо полной перегенерации. Вывод 720p."
     }

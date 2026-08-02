@@ -41,6 +41,9 @@ import 'dotenv/config';
 import { runBin } from '../lib/bin.mjs';
 import { probe } from '../lib/assemble.mjs';
 import { alignToAudio, detectSilence, speechRuns } from '../montage/align.mjs';
+// Видео-корпус (грамматика монтажа + словарь шотов) во ВТОРОМ system-блоке — так же,
+// как карусельный корпус подключён в lib/art-director.js и story-builder.js.
+import { buildVideoCorpus } from '../../lib/corpus.mjs';
 
 // Порог смены плана для ffmpeg. 0.35 — компромисс: ниже ловит смаз движения как кат,
 // выше пропускает мягкие склейки. Грабля, замеренная 30.07 на нашем же ролике:
@@ -314,6 +317,11 @@ async function nameDramaturgy(r) {
     'Формат: никакого текста вне JSON, каждая строка до 160 символов.',
   ].join('\n');
 
+  // Второй system-блок: грамматика монтажа (video-craft.md) + словарь шотов.
+  // Без него модель называла приёмы своими словами и «перенять» выходило общими фразами —
+  // корпус даёт ей наш словарь, и copy/avoid ложатся на то, что движок умеет собрать.
+  const corpus = await buildVideoCorpusSafe(r);
+
   const user = [
     `Длительность ${r.duration.toFixed(2)} сек, речь ${r.speechSec.toFixed(2)} сек, тишина ${pct(r.silenceShare)}.`,
     `Хук (окно ${r.hook.windowSec} сек): речь стартует на ${r.hook.speechStart?.toFixed(2) ?? 'n/a'} сек, текст: «${r.hook.text ?? 'нет транскрипта'}».`,
@@ -327,11 +335,30 @@ async function nameDramaturgy(r) {
   ].filter((x) => x !== null).join('\n');
 
   const res = await client.messages.create({
-    model, max_tokens: 2000, system,
+    model,
+    max_tokens: 2000,
+    system: corpus
+      ? [{ type: 'text', text: system }, { type: 'text', text: corpus }]
+      : system,
     messages: [{ role: 'user', content: user }],
   });
   const raw = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
   return parseJSON(raw);
+}
+
+/**
+ * Корпус под конкретный разбор. Нет файлов корпуса — платный слой обязан работать
+ * без корпуса, а не падать.
+ */
+async function buildVideoCorpusSafe(r) {
+  try {
+    return await buildVideoCorpus({
+      niche: 'разбор драматургии вертикального ролика-донора',
+      keywords: `хук биты ритм пэйофф монтаж удержание ${r.hook?.text || ''}`,
+    });
+  } catch {
+    return null;
+  }
 }
 
 function printLlm(d) {

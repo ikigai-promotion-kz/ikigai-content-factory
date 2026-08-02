@@ -101,3 +101,30 @@ safe-zone, выверенная боевой публикацией · защи�
 порванной бумаге. У нас текст всегда лежит слоем поверх кадра. Закрывается генеративной
 вставкой, но тогда действуют оба правила: один читаемый блок на кадр и никаких
 узнаваемых реальных объектов.
+
+---
+
+## Обновление 02.08.2026 — пак автора от 30.07 и стили кодом
+
+Разобран новый пак (`AI-Cube-Denis-Final-Avgust-2026`). В рабочем скилле автора было
+шесть пресетов, стало **семнадцать**. Наш каталог выше собирался по старому паку и
+витрине, и четырёх стилей в нём не было вовсе:
+
+| Стиль | Формула для промпта |
+|---|---|
+| **3D-моушн** | `indigo to violet gradient with a perspective grid, glossy 3D extruded chrome letters, electric blue edge glow, floating 3D glass cards, parallax depth` |
+| **Стикер-рисованный** | `hand-painted die-cut stickers with thick white cut-out borders, soft gouache and airbrush shading, real volume, glossy edge highlight, corners peeling, semi-realistic painted art` |
+| **Рукописный блокнот** | `real handwriting in blue ballpoint and fineliner, uneven, with ink bleed, light pencil sketches with airy watercolour washes, hand-drawn frames and arrows, visible paper grain, no digital fonts` |
+| **Мел на доске** | `white chalk handwriting with chalk grain and dust and smudges, coloured chalk drawings, loose cross-hatched strokes, no digital fonts and no glow` |
+
+**Стили переехали в код.** Формулы, палитры и фон каждого пресета теперь живут в
+`reels/lib/styles.mjs` — прозой они расходились с промптами. Здесь остаётся разбор
+и сравнение, источник истины для генерации — файл.
+
+**Правила промпта, без которых стиль не собирается**, вынесены отдельно:
+`reels/knowledge/omni-montage-rules.md`. Там же — почему монтаж идёт через `gemini_omni`,
+а не через Seedance, и чем это подтверждено.
+
+**Про «стикер-рисованный» и «стикер-мем» не путать:** первый — рисованная гуашь с
+объёмом, второй — плоские мемные наклейки с кислотной палитрой. Автор развёл их
+специально, потому что модель по слову «стикер» уходила в мультяшные эмодзи.

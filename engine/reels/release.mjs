@@ -1,10 +1,14 @@
 /**
  * release.mjs — папка выпуска: ролик, обложка, слайды, тексты под каждую площадку, README.
  *
- * Публикация РУЧНАЯ и это решение, а не недоделка. Автопостинг требует либо наших
- * профилей и платного тарифа (Upload-Post), либо второго платного сервиса у студента.
- * Ни то, ни другое в комплект не входит, поэтому здесь нет ни токенов, ни обращений
- * к API соцсетей: скрипт готовит папку, человек открывает приложение и заливает.
+ * Публикация — отдельным шагом и после приёмки глазами. Здесь нет ни токенов, ни
+ * обращений к соцсетям: скрипт только готовит папку. Дальше два пути, оба нормальные:
+ * открыть приложение и залить руками либо отдать папку публикатору
+ * (`node publish/publish.mjs <папка>`), который разложит её по каналам через
+ * Upload-Post. Публикатору нужен свой платный аккаунт — см. publish/publish.mjs.
+ *
+ * Рядом с папками скрипт кладёт manifest.json: что за площадка, какой тип медиа,
+ * где лежит текст. Он нужен публикатору, чтобы не угадывать по именам папок.
  *
  * ТЕКСТЫ СКРИПТ НЕ ПРИДУМЫВАЕТ. Их пишет Claude Code — у него контекст бренда,
  * голоса и оффера. Движок принимает готовые из JSON и раскладывает по файлам,
@@ -30,6 +34,10 @@ const ENGINE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 /**
  * Лимиты площадок. Источники — по строкам ниже; всё это грабли, на которых
  * спотыкаются руками, а не теория.
+ *
+ * Поля `upload`, `kind`, `titleFile`, `descriptionFile` читает только манифест —
+ * они говорят публикатору, под каким именем площадка known в Upload-Post, каким
+ * эндпоинтом её грузить и в каком файле лежит текст.
  */
 const PLATFORMS = [
   {
@@ -39,6 +47,9 @@ const PLATFORMS = [
     video: 'reel.mp4',
     cover: 'cover.jpg',
     maxHashtags: 30,
+    upload: 'instagram',
+    kind: 'video',
+    titleFile: 'caption.txt',
     files: (t) => [{ name: 'caption.txt', label: 'подпись', limit: 2200, text: withTags(t) }],
     // Хештеги живут в той же подписи и съедают тот же лимит — частая ошибка
     // «текст влез, а с хештегами уже нет». Больше 30 Instagram игнорирует целиком.
@@ -56,6 +67,9 @@ const PLATFORMS = [
     name: 'TikTok',
     video: 'reel.mp4',
     maxHashtags: 30,
+    upload: 'tiktok',
+    kind: 'video',
+    titleFile: 'caption.txt',
     files: (t) => [{ name: 'caption.txt', label: 'описание', limit: 2200, text: withTags(t) }],
     // 2200 — консервативное значение, которое приложение принимает гарантированно.
     // Хештеги здесь тоже часть описания, отдельного поля под них нет.
@@ -73,6 +87,9 @@ const PLATFORMS = [
     name: 'Telegram',
     video: 'reel.mp4',
     maxHashtags: 10,
+    upload: 'telegram',
+    kind: 'video',
+    titleFile: 'caption.txt',
     files: (t) => [{ name: 'caption.txt', label: 'подпись к медиа', limit: 1024, text: withTags(t) }],
     // Самая частая грабля выпуска: подпись к МЕДИА в Telegram — 1024 знака
     // (4096 только с Premium), тогда как обычное текстовое сообщение — 4096.
@@ -88,6 +105,8 @@ const PLATFORMS = [
     // Тогда это обычное сообщение, а его лимит 4096, а не 1024.
     textOnly: {
       video: null,
+      kind: 'text',
+      titleFile: 'post.txt',
       files: (t) => [{ name: 'post.txt', label: 'текст поста', limit: 4096, text: withTags(t) }],
       limitsNote: 'обычное сообщение до 4096 знаков (1024 — только если текст идёт подписью к медиа)',
       how: [
@@ -104,6 +123,12 @@ const PLATFORMS = [
     video: 'reel.mp4',
     cover: 'cover.jpg',
     maxHashtags: 15,
+    upload: 'youtube',
+    kind: 'video',
+    // Единственная площадка, где заголовок и текст — разные поля: title это имя
+    // ролика на 100 знаков, а всё остальное живёт в описании.
+    titleFile: 'title.txt',
+    descriptionFile: 'description.txt',
     files: (t) => [
       { name: 'title.txt', label: 'заголовок', limit: 100, text: (t.title || '').trim() },
       { name: 'description.txt', label: 'описание', limit: 5000, text: withTags({ caption: t.description, hashtags: t.hashtags }) },
@@ -124,6 +149,9 @@ const PLATFORMS = [
     name: 'Instagram — карусель',
     slides: true,
     maxHashtags: 30,
+    upload: 'instagram',
+    kind: 'photos',
+    titleFile: 'caption.txt',
     files: (t) => [{ name: 'caption.txt', label: 'подпись', limit: 2200, text: withTags(t) }],
     limitsNote: 'подпись до 2200 знаков вместе с хештегами; до 10 слайдов в посте',
     how: [
@@ -165,7 +193,7 @@ if (videoPath) await mustExist(videoPath, 'ролик');
 const slides = await resolveSlides(cfg.slides);
 
 console.log(`=== Пакет к выпуску: ${name} ===`);
-console.log(`Публикация ручная: ни токенов, ни обращений к соцсетям здесь нет.\n`);
+console.log(`Здесь только сборка папки: ни токенов, ни обращений к соцсетям. Публикация — отдельный шаг.\n`);
 
 // ── Ролик: сразу говорим правду о кадре, чтобы не узнать про поля уже в приложении ──
 let videoInfo = null;
@@ -209,6 +237,8 @@ const problems = [];
 // Советы по тексту: подпись формально проходит лимит, но работает вполсилы.
 const advice = [];
 const report = [];
+// Опись пакета для публикатора: что за площадка, чем грузить, где текст.
+const manifest = [];
 
 const usedPlatforms = [];
 
@@ -239,12 +269,15 @@ for (const base of PLATFORMS) {
     await placeMedia(coverPath, path.join(dir, p.cover));
     console.log(`  ${p.cover}`);
   }
+  const placed = [];
+  if (p.video) placed.push(p.video);
   if (p.slides) {
     // Ноль в имени обязателен: в загрузчике порядок = порядок имён,
     // и «slide-10» без нуля встаёт между первым и вторым слайдом.
     for (const [i, src] of slides.entries()) {
-      const dest = path.join(dir, `slide-${String(i + 1).padStart(2, '0')}${path.extname(src)}`);
-      await placeMedia(src, dest);
+      const fname = `slide-${String(i + 1).padStart(2, '0')}${path.extname(src)}`;
+      await placeMedia(src, path.join(dir, fname));
+      placed.push(fname);
     }
     console.log(`  слайдов: ${slides.length} (переименованы в slide-01…, иначе порядок в загрузчике поедет)`);
     if (slides.length > 10) problems.push(`${p.name}: слайдов ${slides.length}, в пост влезает 10`);
@@ -270,6 +303,17 @@ for (const base of PLATFORMS) {
     problems.push(`${p.name}: хештег «${bad}» с пробелом — площадка обрежет его по первому слову`);
   }
   for (const warn of captionWarnings(t.caption || t.description || '', p.name)) advice.push(warn);
+
+  manifest.push({
+    key: p.key,
+    dir: p.dir,
+    name: p.name,
+    kind: p.kind,
+    uploadPost: p.upload,
+    media: placed,
+    titleFile: p.titleFile,
+    descriptionFile: p.descriptionFile || null,
+  });
 }
 
 // Замечания к тексту — не то же самое, что превышение лимита: лимит площадка
@@ -280,6 +324,16 @@ if (advice.length) {
 }
 
 await writeFile(path.join(outDir, 'README.txt'), buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems, usedPlatforms }), 'utf8');
+
+// Манифест для публикатора. Пишем всегда, даже когда есть замечания: сам факт
+// наличия файла ничего не публикует, а publish.mjs без него откажется работать —
+// и человек не поймёт, почему, если папка собиралась в «проблемном» прогоне.
+await writeFile(path.join(outDir, 'manifest.json'), JSON.stringify({
+  name,
+  builtAt: new Date().toISOString(),
+  hasProblems: problems.length > 0,
+  platforms: manifest,
+}, null, 2), 'utf8');
 
 if (problems.length) {
   await writeFile(path.join(outDir, 'ПРОБЛЕМЫ.txt'),
@@ -415,8 +469,13 @@ function buildReadme({ name, cfg, videoInfo, coverAt, slides, report, problems, 
   L.push(`ПАКЕТ К ВЫПУСКУ — ${name}`);
   L.push(`собран ${new Date().toLocaleString('ru-RU')}`);
   L.push('');
-  L.push('Публикация руками. Автопостинга здесь намеренно нет: он требует платного');
-  L.push('сервиса и доступа к вашим аккаунтам. Ниже — что куда заливать по шагам.');
+  L.push('Дальше два пути, и оба нормальные:');
+  L.push('  • руками — открыть приложение и залить. Ниже расписано, что куда;');
+  L.push('  • публикатором — node publish/publish.mjs <эта папка>. Он разложит всё');
+  L.push('    по каналам через Upload-Post; нужен свой аккаунт там (есть бесплатный');
+  L.push('    тариф на 10 публикаций в месяц, чтобы попробовать).');
+  L.push('');
+  L.push('В обоих случаях сначала — проверка глазами. Список ниже, он не заменяется скриптом.');
   L.push('');
   L.push('─── ЧТО ВНУТРИ ───');
   L.push('');
