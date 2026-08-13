@@ -50,7 +50,12 @@ if (!SRC || !WORDS) {
 
 const segNo = Number((args.find((a) => a.startsWith('--segment=')) || '--segment=1').split('=')[1]);
 const styleKey = (args.find((a) => a.startsWith('--style=')) || '--style=gazeta-collage').split('=')[1];
-const keepBg = args.includes('--keep-background');
+// Стили режима A (кинетик, тёплый бренд, 3D-моушн) реальность НЕ заменяют: покадровый
+// разбор десяти демо автора метода 03.08.2026 показал, что спикер там остаётся в своей
+// комнате, а мир стиля живёт на панелях-кульминациях. До этого сборка честно подставляла
+// им `background` и загнала бы спикера кинетика в «чёрный войд», которого у автора нет.
+// Флаг --keep-background остаётся ручным рычагом для остальных режимов.
+const keepBgFlag = args.includes('--keep-background');
 const outDir = (args.find((a) => a.startsWith('--out=')) || `--out=./tmp/storyboard-live/${styleKey}`).split('=')[1];
 
 if (!STYLES[styleKey]) {
@@ -58,6 +63,7 @@ if (!STYLES[styleKey]) {
   process.exit(1);
 }
 const style = STYLES[styleKey];
+const keepBg = keepBgFlag || style.mode === 'A';
 
 const words = JSON.parse(await readFile(WORDS, 'utf8'));
 const segments = segmentByPhrase(words, { target: 10, min: 4, max: 15 });
@@ -204,6 +210,7 @@ console.log([
   `    --duration ${params.duration} --resolution ${params.resolution} --aspect_ratio ${params.aspect_ratio} --wait`,
 ].join(' \\\n'));
 
-console.log(`\nСтиль: ${style.name} (${styleKey}). Фон за спикером: ${keepBg ? 'оставляем как снят' : style.background}.`);
+const bgWhy = style.mode === 'A' && !keepBgFlag ? ' (режим A — стиль живёт на панелях, среду не трогаем)' : '';
+console.log(`\nСтиль: ${style.name} (${styleKey}). Фон за спикером: ${keepBg ? 'оставляем как снят' : style.background}${bgWhy}.`);
 console.log('Звук модели не берём: оригинальную дорожку возвращаем сами при склейке.');
 console.log('Порядок жёсткий: первый кусок → приёмка глазами → остальные.');

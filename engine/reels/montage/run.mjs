@@ -229,8 +229,12 @@ export async function run(configPath) {
   await mkdir(lookDir, { recursive: true });
   const marks = cfg.look || [0.8, edl.outDuration * 0.25, edl.outDuration * 0.5, edl.outDuration * 0.75, edl.outDuration - 1.0];
   for (const t of marks) {
+    // -pix_fmt обязателен: кадры с картинкой-фоном приходят в full-range YUV, и
+    // mjpeg-энкодер на них падает «Error while opening encoder» — приёмка стиля
+    // «блюпринт» 03.08.2026 споткнулась ровно об это на финальном кадре. Та же
+    // грабля уже вылечена в lib/assemble.mjs → grabFrame(), здесь её забыли.
     await runBin('ffmpeg', ['-y', '-ss', t.toFixed(2), '-i', finalPath, '-frames:v', '1',
-      '-q:v', '4', '-update', '1', path.join(lookDir, `t-${t.toFixed(1)}.jpg`)]);
+      '-pix_fmt', 'yuvj420p', '-q:v', '4', '-update', '1', path.join(lookDir, `t-${t.toFixed(1)}.jpg`)]);
   }
   log(`контрольные кадры: ${lookDir}`);
 

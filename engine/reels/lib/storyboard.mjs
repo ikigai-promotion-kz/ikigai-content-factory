@@ -46,14 +46,17 @@ export async function grabPanelFrames(source, panels, outDir) {
  * @param {{name:string, palette:string, type:string}} args.preset - стилевой пресет
  * @returns {string}
  */
-export function storyboardPrompt({ part, total, panels, preset }) {
+export function storyboardPrompt({ part, total, panels, preset, textAsObject = false }) {
   // Слова из транскрипта ОБЯЗАНЫ быть на борде: именно их модель потом рисует в кадре.
   // До 02.08.2026 сюда уходила только драматургическая роль, а подписи не попадали
   // на борд вообще — модель придумывала текст сама.
+  // В промпт уходит ПРЕДМЕТ (`object`), а не драматургическая роль. Роль по-русски
+  // («вводит доказательство») сюда попадала по недосмотру: она и русская в английском
+  // тексте, и не говорит модели, что рисовать. `role` остаётся для человека в консоли.
   const rows = panels
     .map((p, i) => `panel ${i + 1} — attachment ${i + 1} as the photo inside the phone frame; ` +
       `big Russian caption drawn OVER the photo, exactly these words and nothing else: "${p.words}"; ` +
-      `graphic overlay inside the panel illustrates: ${p.role}`)
+      `graphic overlay inside the panel: ${p.object || p.role}`)
     .join('\n');
 
   // Сетка считается от числа панелей, а не зашита. Раньше здесь стояло «6 panels in a
@@ -86,15 +89,39 @@ export function storyboardPrompt({ part, total, panels, preset }) {
     '',
     rows,
     '',
+    // Блок «спикер виден всегда» и геометрия титра. Оба взяты из ручного прогона 03.08.2026,
+    // в опубликованных промптах автора их нет. Без первого Omni превращает говорящую голову
+    // в b-roll (проверено дважды: без блока спикер исчез на 2/3 ролика, с блоком присутствовал
+    // во всех 31 секунде). Без второго титр печатается на футболке и стекает по ней.
+    // У надписей отрицания работают — в отличие от предметов, где «no new objects» душит генерацию.
+    'MOST IMPORTANT RULE: the speaker is VISIBLE IN EVERY panel. No panel is objects only,',
+    'no panel is graphics only, no panel is an empty background. Cards, strips and overlays always',
+    'sit BEHIND him or BESIDE him, they never cover him and never take his place.',
+    '',
+    'Captions sit in the LOWER THIRD of their panel inside a safe margin: never over his face,',
+    'never printed on his chest or t-shirt, never touching the panel edge, never cropped.',
+    '',
+    // Текст на предметах — по стилю, та же развилка, что и в промпте монтажа.
+    textAsObject
+      ? 'Objects may carry text, but only ONE short word each, set large in clean block letters:\n'
+        + 'a real, correctly spelled Russian word that fits the phrase. Never a sentence, never invented words.\n'
+        + 'Background newsprint, posters and pages stay SMALL and soft: texture only, never large readable type.'
+      : 'No text on the objects: cards, papers, panels and screens stay blank, only icons and symbols.\n'
+        + 'The panel caption is the only text inside the panel.',
+    '',
     // Английские подписи типа «SPLIT-SCREEN L/R» и таймкоды под панелями с борда УБРАНЫ.
     // Прогон 02.08.2026: в стиле «терминал-про» они утекли прямо в кадр видео и висели
     // там как часть картинки — зелёный моноширинный текст неотличим от самого стиля,
     // и строка-предохранитель в промпте монтажа его не спасла. В газете и обсидиане
     // не утекло, то есть протечка зависит от стиля, а не от заклинания. Тип шота и
     // таймкод человеку печатает консоль; на борде им делать нечего.
-    'No English labels, no shot-type names, no timecodes and no panel numbers anywhere on the sheet.',
-    'Small motion badges inside panels where relevant (SLOW PUSH IN, ZOOM OUT), accent arrows between panels',
-    'showing the reading order left to right, top to bottom.',
+    // Бейджи движения «SLOW PUSH IN / ZOOM OUT» с борда УБРАНЫ 03.08.2026. Строкой выше
+    // мы запрещали английские подписи и тут же сами их заказывали — модель выполняла
+    // второе. В газетном стиле бейдж нарисован красным штампом, неотличимым от газетного
+    // декора, и Omni растиражировала его по кадру четырьмя штампами «SLOW PUSW PUSH IN».
+    // Движение задаётся текстом промпта монтажа; на борде ему делать нечего.
+    'No English labels, no shot-type names, no motion badges, no timecodes and no panel numbers anywhere on the sheet.',
+    'Accent arrows between panels showing the reading order left to right, top to bottom.',
     '',
     `Style: ${preset.type}. Russian captions must be spelled correctly, no invented words.`,
     'No quotation marks, no guillemets, no apostrophes anywhere. Check every letter.',
@@ -110,7 +137,7 @@ export function storyboardPrompt({ part, total, panels, preset }) {
  * @returns {string}
  */
 export function montagePrompt(panels, opts = {}) {
-  const { style = null } = opts;
+  const { style = null, textAsObject = false } = opts;
 
   const intro = 'Edit this video following the attached storyboard reference exactly. '
     + 'Smooth elegant transitions throughout, no hard cuts, everything morphs fluidly. '
@@ -124,15 +151,49 @@ export function montagePrompt(panels, opts = {}) {
     .map((p, i) => `${beatWord(i, panels.length)} - ${p.motion}${p.words ? `, caption "${p.words}"` : ''}.`)
     .join('\n');
 
+  // «All text animates in» заменено на «The headline animates in» 04.08.2026: общая
+  // формулировка про «весь текст» подсказывала модели, что текста в кадре может быть
+  // много, и она дописывала его на карточках.
   const outro = 'All transitions smooth and fluid. Camera drifts slow and gentle on first and last moment. '
-    + 'All text animates in with overshot - never static. Premium cinematic motion.';
+    + 'The headline animates in with overshot - never static. Premium cinematic motion.';
 
   // Три предохранителя. Без них Omni утаскивает в кадр служебное с борда, рисует два
   // заголовка разом и переозвучивает речь под надпись. Гейт preflight() их наличие проверяет.
+  // Четвёртая и пятая строки добавлены 04.08.2026 — те же два лекарства, что и в промпте
+  // борда: спикер не уходит из кадра, титр не печатается на нём.
   const guards = [
     'Output ONE full-screen composition always: never show storyboard panels, numbers, grids or labels.',
     'Only ONE headline on screen at a time: it fully disappears before the next appears, never overlapping.',
     'Keep my original audio exactly as it is: do NOT re-voice, re-time or shorten the speech.',
+    'The speaker stays VISIBLE on screen in every second of the clip: never cut away to graphics only,'
+      + ' graphics always sit behind him or beside him.',
+    'Every headline sits in the lower third inside a safe margin: never over his face, never printed'
+      + ' on his chest, never touching the frame edge, never cropped.',
+    // Шестая строка, 04.08.2026, и она ЗАВИСИТ ОТ СТИЛЯ.
+    //
+    // Ломается не количество текстовых блоков, а длина и определённость. Замер на двух
+    // роликах: editorial просил в карточке целую фразу — модель выдала псевдорусский
+    // («Чззенито чаотуват деслежия»); газета просила ОДНО короткое слово капсом на
+    // вырезке — «ВАРИАНТЫ», «РЕКЛАМА», «ВАЖНО», «ПРОБУЙТЕ» напечатаны чисто, все до одного.
+    //
+    // Поэтому стилям, где текст на предмете и есть приём (`textAsObject: true` —
+    // газета, гранж, мем, блокнот, мел, 3D), запрет не ставится: им задаётся рамка
+    // «одно короткое слово, крупно, дословно». Остальным текст на предметах запрещён.
+    // Уточнено после прогона газеты 04.08.2026. Первая версия говорила «слово ИЗ СЛОВ
+    // ПОДПИСИ» — и отобрала у стиля смысловые штампы: вчерашний ролик держался на
+    // «ВАРИАНТЫ», «ТРЕНДЫ», «РЕКЛАМА», а с той формулировкой их не осталось вовсе.
+    // Теперь слово берётся по смыслу сказанного. Вторая строка — про фон: крупные
+    // газетные заголовки на заднем плане модель заполняет псевдорусским («Проодак»,
+    // «Павие оредокел»), а мелкие читаются как фактура и никому не мешают.
+    textAsObject
+      ? 'Objects may carry text, but only ONE short word each, set large in clean block letters -'
+        + ' a real, correctly spelled Russian word that fits what is being said. Never a phrase,'
+        + ' never a sentence, never invented words. The headline in the lower third stays the main text.\n'
+        + 'Any printed matter in the background - newspaper columns, posters, pages, headlines -'
+        + ' stays SMALL, soft and out of focus: pure texture, never large readable type.'
+      : 'Exactly ONE piece of text exists in the frame at any moment: the headline in the lower third.'
+        + ' Cards, papers, panels, screens and every other object stay BLANK - no letters, no words,'
+        + ' no handwriting, no fake text on them, only icons, symbols and empty surfaces.',
   ].join('\n');
 
   return [intro, style ? `\nSTYLE: ${style}` : '', '', beats, '', outro, '', guards]

@@ -14,7 +14,7 @@
  * кадр целиком определяется номером. Тот же приём, что в рендере наших слайдов.
  */
 
-import { mkdir, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rm, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -88,7 +88,7 @@ export async function buildOverlayHtml({
  * строк цветов. Любое поле поверх пресета переопределяется точечно:
  * `theme: { preset: 'gazeta', accent: '#0A5C36' }`.
  */
-const PRESETS = {
+export const PRESETS = {
   // Фирменный: тёплая бумага, красный акцент, крупный гротеск. По умолчанию.
   ikigai: {},
   // Газетный: чёрно-белая полиграфия, акцент только в подсветке слова.
@@ -231,6 +231,30 @@ const PRESETS = {
     sceneBg: 'rgba(4,22,26,.90)', sceneSub: '#7FCFCB', frameColor: '#2FE6E0', frameWidth: '4px',
     plateBg: '#04161A', radiusCard: '14px', radiusCap: '14px', radiusHook: '8px',
   },
+  // ── Стили, заведённые генератором 03.08.2026 (reels/knowledge/style-recipes.md) ──
+
+  // Японский минимал: рисовая бумага, индиго единственным акцентом, острая геометрия.
+  // Скругления нулевые намеренно: «ма» — это пауза и прямая линия, а не мягкость.
+  // Капс выключен: тихий стиль не кричит.
+  'ma-minimal': {
+    accent: '#2B3A67', caseHead: 'none',
+    cardBg: '#F7F5F0', cardText: '#1A1A1A', cardSub: '#8A8578',
+    capBg: '#F7F5F0', capText: '#1A1A1A',
+    sceneBg: 'rgba(247,245,240,.96)', sceneText: '#1A1A1A', sceneSub: '#8A8578',
+    frameColor: '#F7F5F0', plateBg: '#F7F5F0',
+    radiusCard: '0px', radiusCap: '0px', radiusHook: '0px',
+  },
+  // Блюпринт-чертёж: синька, белые линии, моноширинные подписи. Фактуру сетки даёт
+  // картинка-фон (sceneImage) — вёрсткой чертёжную сетку не собрать.
+  blueprint: {
+    accent: '#4FC3F7',
+    cardBg: '#0E3A5F', cardText: '#E8F1F8', cardSub: '#8FB4CC',
+    capBg: '#0E3A5F', capText: '#E8F1F8',
+    sceneBg: 'rgba(14,58,95,.90)', sceneSub: '#8FB4CC',
+    frameColor: '#4FC3F7', frameWidth: '3px', plateBg: '#0E3A5F',
+    radiusCard: '2px', radiusCap: '2px', radiusHook: '0px',
+  },
+
   // Матрица-логи: зелёный код по всему кадру. Работает в паре с экраном-терминалом.
   'matrix-logs': {
     accent: '#2BFF6A',
@@ -409,13 +433,24 @@ export async function renderOverlayFrames(htmlPath, { frames, fps = 30, outDir, 
  */
 export async function compositeOverlay(basePath, framesDir, outPath, fps = 30, lufs = -14, measured = null) {
   await mkdir(path.dirname(outPath), { recursive: true });
-  // Звуковая ветка идёт через filter_complex вместе с видео: отдельный -af рядом с
-  // -filter_complex ffmpeg не принимает.
-  const audioFilter = lufs === null
-    ? null
-    : loudnormFilter(measured, { ...TARGET, I: lufs });
-  const graph = '[0:v][1:v]overlay=0:0:format=auto,format=yuv420p[v]'
-    + (audioFilter === null ? '' : `;[0:a]${audioFilter}[a]`);
+  // Звук нормализуется ОТДЕЛЬНЫМ проходом, а не в одном графе с картинкой.
+  //
+  // Причина найдена приёмкой стиля «блюпринт» 03.08.2026. loudnorm почти всегда
+  // уходит в динамический режим (замер печатает normalization_type: dynamic — линейно
+  // уложиться в true peak с нашего тихого дубля нельзя), а динамический loudnorm в
+  // общем filter_complex обрывает мукс раньше, чем видео-ветка дочитает секвенцию
+  // тяжёлых PNG: в ролик попало 500 кадров из 717 — минус семь секунд вместе с финалом.
+  // Команда при этом завершалась успешно, и по логу всё выглядело правильно.
+  // Второй проход перекодирует только звук (-c:v copy) и стоит доли секунды.
+  // Приведение PNG к единому rgba обязательно, и это не косметика.
+  //
+  // Playwright снимает кадры с omitBackground, но PNG-энкодер выбрасывает альфа-канал
+  // у кадров, где картинка-фон закрывает экран целиком: часть секвенции приходит rgba,
+  // часть rgb24. На каждой смене формата ffmpeg переконфигурирует фильтр-граф и теряет
+  // кадры — приёмка стиля «блюпринт» 03.08.2026 получила 500 кадров из 717, то есть
+  // минус семь секунд хвоста вместе с финальным CTA. Молча: команда завершалась успешно.
+  // С явным format=rgba секвенция доезжает целиком.
+  const graph = '[1:v]format=rgba[ov];[0:v][ov]overlay=0:0:format=auto,format=yuv420p[v]';
   await runBin('ffmpeg', [
     '-y',
     '-i', basePath,
@@ -423,14 +458,31 @@ export async function compositeOverlay(basePath, framesDir, outPath, fps = 30, l
     '-i', path.join(framesDir, 'f-%05d.png'),
     '-filter_complex', graph,
     '-map', '[v]',
-    // ? — источник может быть без звука, не падаем. С нормализацией ветка [a]
-    // существует только когда звук есть, поэтому подстраховка остаётся нужной.
-    ...(lufs === null ? ['-map', '0:a?'] : ['-map', '[a]?']),
+    // Звук берётся из базы как есть; ? — источник может быть без звука, не падаем.
+    '-map', '0:a?',
     '-c:v', 'libx264', '-crf', '19', '-preset', 'medium',
     '-c:a', 'aac', '-b:a', '160k',
     '-movflags', '+faststart',
     outPath,
   ]);
+
+  if (lufs === null) return outPath;
+
+  // Второй проход: только звук. Картинка копируется потоком, поэтому ни один кадр
+  // потеряться уже не может, а качество видео не трогается повторным кодированием.
+  const tmpPath = `${outPath}.norm.mp4`;
+  await runBin('ffmpeg', [
+    '-y',
+    '-i', outPath,
+    '-map', '0:v:0', '-map', '0:a:0?',
+    '-c:v', 'copy',
+    '-af', loudnormFilter(measured, { ...TARGET, I: lufs }),
+    '-c:a', 'aac', '-b:a', '160k',
+    '-movflags', '+faststart',
+    tmpPath,
+  ]);
+  await rm(outPath, { force: true });
+  await rename(tmpPath, outPath);
   return outPath;
 }
 
