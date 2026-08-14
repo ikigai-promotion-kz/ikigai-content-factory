@@ -49,6 +49,8 @@ export async function run(configPath) {
   const { w: srcW, h: srcH } = await probeSize(src);
   log(`вход: ${srcW}×${srcH}, ${duration.toFixed(2)} сек`);
 
+  await warnIfStyleNameCollides(cfg.theme);
+
   // ── 1. Транскрипт на реальный звук ──
   const { runs, words: aligned } = await alignToAudio(src, words, duration);
   log(`речевых прогонов: ${runs.length}`);
@@ -263,6 +265,36 @@ async function probeDuration(src) {
   const r = await runBin('ffprobe', ['-v', 'error', '-show_entries', 'format=duration',
     '-of', 'default=noprint_wrappers=1:nokey=1', src]);
   return Number(r.stdout.trim());
+}
+
+/**
+ * Предупредить, что тема оверлея тёзка генеративного стиля.
+ *
+ * Двенадцать имён живут в обоих слоях (`kinetik`, `premium`, `grunge`, …), и
+ * совпадение имени маскирует подмену ветки: человек просит «в газетном стиле»,
+ * получает плашки поверх своей комнаты и решает, что фабрика не умеет иначе.
+ * Ровно этот сценарий воспроизвёлся трижды на двух машинах, 04.08.2026.
+ *
+ * Прогон не останавливаем — бесплатная ветка остаётся законным выбором.
+ * Каталог генеративных стилей может отсутствовать (комплект собирают по-разному),
+ * поэтому импорт мягкий: нет файла — нет предупреждения.
+ */
+async function warnIfStyleNameCollides(theme) {
+  const name = typeof theme === 'string' ? theme : theme?.preset;
+  if (!name) return;
+  let STYLES;
+  try {
+    ({ STYLES } = await import('../lib/styles.mjs'));
+  } catch {
+    return;
+  }
+  // Точное совпадение имени либо газетная пара `gazeta` ↔ `gazeta-collage`.
+  const twin = STYLES[name] ? name : Object.keys(STYLES).find((k) => k.startsWith(`${name}-`));
+  if (!twin) return;
+  log(`ВНИМАНИЕ: «${name}» есть и в генеративной ветке (стиль «${twin}»).`);
+  log('  Здесь — плашки ПОВЕРХ снятого, ваша комната остаётся как есть, цена ноль.');
+  log(`  Там — мир заменяется целиком: node reels/generative-run.mjs <видео> <words.json> --style=${twin}`);
+  log('  Если ждали второе — остановите прогон, это не та ветка.');
 }
 
 /** Локальный файл для <img src>: Chromium в headless открывает страницу по file://. */

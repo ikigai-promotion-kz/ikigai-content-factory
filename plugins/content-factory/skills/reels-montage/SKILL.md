@@ -1,9 +1,38 @@
 ---
 name: reels-montage
-description: Use when the user wants to turn their own talking-head video into a finished vertical Reels for Instagram/TikTok/Shorts — cutting dead air, changing shot sizes, karaoke word-by-word subtitles, title cards and proof inserts, all rendered locally with ffmpeg at zero credit cost. Prefer this over generic video-editing skills for vertical short-form. Triggers on "смонтируй видео", "сделай рилс", "нарежь это видео", "монтаж без монтажёра", "вертикальное видео", "субтитры на видео", "make a reel", "vertical short-form montage", "karaoke subtitles".
+description: Use ONLY when the user explicitly wants the FREE overlay branch — captions and title cards drawn on top of the footage they already shot, rendered locally with ffmpeg at zero credit cost, with the room behind them left exactly as filmed. Triggers on "без кредитов", "бесплатно смонтируй", "караоке-субтитры", "вырежи паузы", "титры поверх видео", "точный текст в кадре", "оверлеем", "free overlay montage", "karaoke subtitles". NOT the default for "смонтируй видео" / "сделай рилс" / any style named by word — those mean the generative branch, see `reels-styles`.
 ---
 
 # Монтаж Reels из своего видео
+
+## СНАЧАЛА РАЗВИЛКА — её путают чаще всего
+
+Фабрика умеет две разные вещи, и у них **пересекаются имена стилей**: `gazeta`,
+`kinetik`, `premium`, `grunge`, `telegram`, `editorial` есть в обеих ветках, но
+это не одно и то же.
+
+| | Оверлей — ЭТОТ скилл | Генерация — `reels-styles` |
+|---|---|---|
+| Что делает | плашки и титры **поверх** снятого | меняет **сам мир** вокруг спикера |
+| Комната за спиной | видна как снята | заменяется миром стиля |
+| Цена | **0** | ~37 кредитов за 10 сек |
+| Выход | 1080×1920 | 720×1280 |
+| Стилей | 18 CSS-тем | 20 генеративных пресетов |
+
+**Дефолт — генерация, а не этот скилл.** Человек, который говорит «смонтируй
+видео в газетном стиле», почти всегда имеет в виду мир, а не плашку: оверлей
+выглядит как обычный монтаж, а генерация — как то, ради чего фабрику покупали.
+
+**Этот скилл берётся, когда сказано явно:** «без кредитов», «бесплатно»,
+«вырежи паузы», «караоке-субтитры», «титры поверх», «нужен точный текст в кадре».
+И ещё в двух случаях: узнаваемый реальный объект в кадре (генерация его
+перерисует) и поток, где важна цена, а не витрина.
+
+Не понял, чего хочет человек — **спроси одной фразой и назови цену обеих веток**.
+Молча взять бесплатную ветку и отдать плашки — самая дорогая ошибка фабрики:
+человек видит результат ниже ожиданий и решает, что фабрика этого не умеет.
+
+---
 
 Фабрика превращает один статичный дубль «говорящая голова» в смонтированный вертикальный ролик. Всё считается на машине: **ноль кредитов, ноль обращений к моделям**.
 

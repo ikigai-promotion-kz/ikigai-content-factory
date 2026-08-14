@@ -63,7 +63,12 @@ export const STYLES = {
     panelType: 'bold condensed uppercase, white plus orange second line',
     textAsObject: false,
     light: null,
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/kinetik/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'титры чистые, комната сохранена как задумано (режим A); титр местами ложится на грудь, хотя промпт это запрещает',
+    },
     risk: 'приелся: у автора это семь роликов из десяти, узнаётся как чужой почерк. Два раза подряд не ставить',
   },
   'neon-tech': {
@@ -95,7 +100,12 @@ export const STYLES = {
     panelType: 'narrow techno caps inside a glowing HUD plate',
     textAsObject: false,
     light: 'cold cyan edge light from the surrounding panels falls on the speaker',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/neon-tech/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'дата-центр и HUD держатся, титры дословны; «код» на панелях — абракадабра, но это текстура',
+    },
     risk: 'миниатюры внутри HUD модель заполняет чужими лицами; мелкие подписи интерфейса выходят абракадаброй',
   },
   'minimal-lux': {
@@ -125,7 +135,12 @@ export const STYLES = {
     panelType: 'huge black display type, single red word',
     textAsObject: false,
     light: 'even soft gallery light, no visible source',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/minimal-lux/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'белая галерея, красный акцент, серифный титр чистый; фильтр пропустил только со смягчённой формулой спикера',
+    },
     risk: 'на светлом фоне без фактуры слабее держит стоп-скролл; белая футболка спикера сливается с фоном',
   },
   editorial: {
@@ -155,7 +170,12 @@ export const STYLES = {
     panelType: 'elegant serif display with a terracotta rule under one word',
     textAsObject: false,
     light: 'warm diffused daylight, soft shadow on paper',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/editorial/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'кремовая бумага и терракота, кружок-врезка, титры чистые',
+    },
     risk: 'спокойный ритм проигрывает в ленте агрессивным стилям на первых секундах',
   },
   telegram: {
@@ -185,7 +205,12 @@ export const STYLES = {
     panelType: 'interface sans inside chat bubbles',
     textAsObject: false,
     light: 'cool screen glow from below on the speaker',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/telegram/part-1-final.mp4',
+      verdict: 'принят с оговорками',
+      note: 'главный титр чистый, но пузыри чата — псевдорусский, а в этом стиле они читаются как содержательные',
+    },
     risk: 'текст внутри пузырей модель пишет с ошибками — настоящую переписку ставить вёрсткой (takeover.screen.kind phone)',
   },
   'gazeta-collage': {
@@ -219,9 +244,10 @@ export const STYLES = {
     textAsObject: true,
     light: 'flat daylight, no dramatic shadows',
     proof: {
-      date: '2026-08-02',
-      evidence: 'projects/plans/video-styles-denis/proofs/omni-gazeta-part1.mp4',
-      verdict: 'принят с оговорками',
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/gazeta-collage/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'вырезки, штампы, титр наборными буквами; слова на предметах чистые',
     },
     risk: 'подписи на обрывках модель обрезает краем бумаги; стена постеров перерисовывается между кусками — континьюити не держится',
   },
@@ -256,7 +282,12 @@ export const STYLES = {
     panelType: 'refined serif display, gold on obsidian',
     textAsObject: true,
     light: 'warm golden rim light wraps the speaker from behind',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/premium/part-1-final.mp4',
+      verdict: 'принят с оговорками',
+      note: 'богатая картинка, но титр показан ДВАЖДЫ одновременно (в карточке и внизу), надписи на карточках — каша',
+    },
     risk: 'гравировка тёмным по золоту почти нечитаема на мелких плашках — текст просить светлым с сильной фаской',
   },
   meme: {
@@ -289,7 +320,12 @@ export const STYLES = {
     panelType: 'chunky rounded bubble letters with thick outline',
     textAsObject: true,
     light: 'flat bright light, no shadows',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/meme/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'комикс-панели, стикеры и эмодзи, титры дословны; слова на стикерах чистые',
+    },
     risk: 'литеральные эмодзи срывают генерацию борда; кислотная палитра неуместна в премиальных темах',
   },
   'warm-brand': {
@@ -319,7 +355,12 @@ export const STYLES = {
     panelType: 'serif display with a coral brush underline',
     textAsObject: false,
     light: null,
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/warm-brand/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'коралловые карточки и sparkle, титр в пузыре чата, кириллица идеальна',
+    },
     risk: 'близок к editorial: в одной серии их не смешивать, зритель не различит',
   },
   'terminal-pro': {
@@ -462,7 +503,12 @@ export const STYLES = {
     panelType: 'huge condensed stamped caps on torn paper',
     textAsObject: true,
     light: 'flat outdoor daylight',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/grunge/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'стена постеров, скотч, halftone-переход по краю лица; титр на клочке бумаги чистый',
+    },
     risk: 'обрывок режет слова; стена постеров перерисовывается между кусками — континьюити мира не держится',
   },
   'd3-motion': {
@@ -494,7 +540,12 @@ export const STYLES = {
     panelType: 'glossy 3D extruded chrome letters',
     textAsObject: true,
     light: null,
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/d3-motion/part-1-final.mp4',
+      verdict: 'принят',
+      note: 'хром и глянец, объёмный титр чистый; комната сохранена (режим A)',
+    },
     risk: 'объёмные буквы вёрсткой не собрать — панель требует картинки-фона; при частом использовании выглядит шаблонно',
   },
   'sticker-painted': {
@@ -527,7 +578,12 @@ export const STYLES = {
     panelType: 'hand-lettered caption on a painted sticker ribbon',
     textAsObject: true,
     light: 'soft even light with gentle drop shadows',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/sticker-painted/part-1-final.mp4',
+      verdict: 'брак',
+      note: 'на стикерах вместо кириллицы латиница (BAHNER, TEXT, VIDEO), финальный титр рассыпался на «ошиб к», слово «карусель» понято буквально — нарисована ярмарочная карусель',
+    },
     risk: 'по слову «стикер» модель сваливается в мультяшные эмодзи — держать формулировку про полуреалистичную живопись',
   },
   notebook: {
@@ -559,7 +615,12 @@ export const STYLES = {
     panelType: 'real handwriting in blue ballpoint, no digital fonts',
     textAsObject: true,
     light: 'soft window daylight falling on paper',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/notebook/part-1-final.mp4',
+      verdict: 'принят с оговорками',
+      note: 'акварель и рукописный титр чистые; карточка в кадре даёт псевдорусский. Фильтр не пропускал вообще, пока в формуле стояло «ink bleed»',
+    },
     risk: 'рукописную кириллицу модель коверкает сильнее печатной — подписи держать короткими',
   },
   // ── Стили, собранные генератором 03.08.2026 (первые не с чужого завода) ──
@@ -712,7 +773,12 @@ export const STYLES = {
     panelType: 'uneven white chalk handwriting with dust',
     textAsObject: true,
     light: 'warm room light across the slate surface',
-    proof: null,
+    proof: {
+      date: '2026-08-14',
+      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/chalk/part-1-final.mp4',
+      verdict: 'принят с оговорками',
+      note: 'меловые титры чистые и красивые, но карточка-цитата дала «ДРАРЬ-КЕРЛА» вместо слова',
+    },
     risk: 'меловая кириллица разборчива только крупным кеглем; свечения в этом стиле быть не должно',
   },
 };

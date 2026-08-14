@@ -75,5 +75,9 @@ function resolve(entry) {
   // edit-модель переопределяется своей парой env — например GEN_EDIT_MODEL_PRO.
   const editEnv = entry.env ? `${entry.env.replace('GEN_MODEL', 'GEN_EDIT_MODEL')}` : null;
   const edit = (editEnv && process.env[editEnv]) || entry.edit || null;
-  return { model, edit, intent: entry.intent || '' };
+  // Бэкенд у картинок появился вместе с интентом gpt-image-hf: fal-клиент
+  // (genimage.mjs) и CLI Higgsfield принимают РАЗНЫЕ идентификаторы моделей,
+  // и без явного поля вызывающий не отличит `fal-ai/…` от `gpt_image_2`.
+  // Умолчание 'fal' — так вели себя все прежние записи.
+  return { model, edit, intent: entry.intent || '', backend: entry.backend || 'fal' };
 }

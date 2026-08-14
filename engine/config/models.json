@@ -23,9 +23,17 @@
     },
     "gpt-image": {
       "model": "fal-ai/gemini-3-pro-image-preview",
+      "backend": "fal",
       "env": "GEN_MODEL_GPT",
-      "intent": "текст-в-кадре: editorial/Swiss/letterpress/callout/инфографика/big-number",
-      "note": "НАСТОЯЩИЙ GPT Image 2 в headless недоступен: Higgsfield REST отдаёт 404 на все слаги (проба 07.07.2026), fal-ai/gpt-image-2 в каталоге помечен '⚠ slug'. Живёт через Higgsfield MCP в чат-режиме /creative и /carousel-day. Здесь честный фолбэк на PRO — лучший headless-контроль типографики. Подтвердится slug — меняется одна строка."
+      "intent": "текст-в-кадре через fal: editorial/Swiss/letterpress/callout/инфографика/big-number",
+      "note": "Это путь ЧЕРЕЗ FAL, и здесь GPT Image 2 действительно нет: REST Higgsfield отдавал 404 (проба 07.07.2026), fal-ai/gpt-image-2 в каталоге помечен '⚠ slug'. Честный фолбэк на PRO. Настоящий GPT Image 2 живёт в интенте gpt-image-hf ниже — через CLI, и он доступен."
+    },
+    "gpt-image-hf": {
+      "model": "gpt_image_2",
+      "backend": "higgsfield-cli",
+      "env": "GEN_MODEL_GPT_HF",
+      "intent": "НАСТОЯЩИЙ GPT Image 2: борд генеративного монтажа, кириллица в кадре, 2k/4k",
+      "note": "Проверено 14.08.2026: `higgsfield model list --image` содержит gpt_image_2, `generate cost` отвечает 7 credits. Запись про 404 выше относится к REST-пути fal и к пробе от 07.07.2026 — за три недели до установки CLI (@higgsfield/cli 1.1.20, 29.07.2026). Higgsfield сам рекомендует CLI для Claude Code вместо MCP-коннектора. Вызов: higgsfield generate create gpt_image_2 --prompt … --image … --aspect_ratio 9:16 --resolution 2k --wait. Ходит через CLI, не через genimage.js (тот умеет только fal REST)."
     },
     "recraft": {
       "model": "fal-ai/recraft/v4/pro/text-to-image",

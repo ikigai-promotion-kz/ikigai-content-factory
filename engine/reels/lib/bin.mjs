@@ -23,6 +23,14 @@ const _cache = new Map();
 const VERSION_FLAG = { 'yt-dlp': '--version', higgsfield: '--version' };
 // Имя пакета, в поставке которого лежит инструмент (ffprobe приходит вместе с ffmpeg).
 const PACKAGE_OF = { ffprobe: 'ffmpeg' };
+// Настоящий исполняемый файл может называться иначе, чем команда.
+//
+// higgsfield ставится через npm, и в PATH ложится `higgsfield.cmd` — обёртка. Node с
+// 2024 года отказывается запускать .cmd через execFile: `spawn EINVAL` (защита от
+// CVE-2024-27980), а обойти это можно только shell:true, то есть склейкой аргументов
+// в строку — с нашими многострочными промптами это верный способ поломать кавычки.
+// Внутри пакета лежит настоящий бинарь `vendor/hf.exe`, он запускается напрямую.
+const ALT_NAMES = { higgsfield: ['hf.exe', 'hf'] };
 
 /** Каталоги, где инструмент может лежать помимо PATH (по убыванию вероятности). */
 function candidateDirs(tool) {
@@ -44,6 +52,9 @@ function candidateDirs(tool) {
       dirs.push(pkgDir);
     }
     dirs.push('C:/ProgramData/chocolatey/bin', path.join(home, 'scoop/shims'));
+    // Вендорный бинарь npm-пакета идёт ПЕРЕД папкой npm: в самой папке лежит только
+    // .cmd-обёртка, которую Node запустить не может (см. ALT_NAMES).
+    dirs.push(path.join(home, 'AppData/Roaming/npm/node_modules/@higgsfield/cli/vendor'));
     // Глобальные пакеты npm. Сюда ставится higgsfield и вообще всё, что через npm i -g:
     // без этой строки проверка окружения говорила «программы нет», хотя она работала.
     dirs.push(path.join(home, 'AppData/Roaming/npm'));
@@ -78,9 +89,12 @@ export async function resolveBin(tool) {
   // На Windows искали только .exe — а всё, что ставится через npm (higgsfield и ему
   // подобные), лежит как .cmd рядом с .ps1. Из-за этого проверка окружения говорила
   // «программы нет», когда она стояла и работала.
+  // Сначала настоящие исполняемые (включая вендорные под другим именем), и только
+  // потом .cmd-обёртки: Node не умеет запускать .cmd через execFile.
+  const alts = ALT_NAMES[tool] || [];
   const names = process.platform === 'win32'
-    ? [`${tool}.exe`, `${tool}.cmd`, `${tool}.bat`, tool]
-    : [tool];
+    ? [`${tool}.exe`, ...alts, `${tool}.cmd`, `${tool}.bat`, tool]
+    : [tool, ...alts];
   for (const dir of candidateDirs(tool)) {
     for (const name of names) {
       const full = path.join(dir, name);
