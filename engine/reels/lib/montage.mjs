@@ -71,6 +71,34 @@ export function montageParams({ videoMediaId, frameMediaIds = [], prompt, durati
  * записи стиля (`reels/lib/style-new.mjs`) — формула и фон уходят в те же промпты,
  * и второй список регулярок разошёлся бы с этим на первой же правке.
  */
+/**
+ * Смягчить формулировки, на которых фильтр Higgsfield ложно срабатывает.
+ *
+ * Формула сохранения спикера («cut him out from his room», «his body») доказана
+ * двенадцатью бордами из двенадцати и держит личность — менять её насовсем нельзя.
+ * Но на монтаже фильтр читает её буквально: прогон 14.08.2026 потерял так пять
+ * стилей из тринадцати, а простой повтор не помог — на трёх стилях отказ
+ * воспроизводился подряд, то есть срабатывание не случайное.
+ *
+ * Поэтому смягчение применяется ТОЛЬКО как второй заход, после честного отказа:
+ * тот же смысл, другие слова. Если и это не проходит, значит дело не в словах.
+ *
+ * @param {string} prompt
+ * @returns {string}
+ */
+export function softenForFilter(prompt) {
+  return prompt
+    .replace(/cut him out from his room and place him in front of/gi, 'replace the room behind him with')
+    .replace(/Keep his cut-out edges natural\./gi, 'Keep the edges around him natural.')
+    .replace(/exact face, hair, beard, skin, clothes, body and pose/gi, 'exact face, hair, beard, clothes and pose')
+    // «ink bleed» — про растекание чернил по бумаге, но фильтр читает bleed как кровь.
+    // Найдено замером 14.08.2026: из тринадцати стилей это слово было ровно у одного
+    // (`notebook`), и ровно он не прошёл ни с первого раза, ни с повтора, ни со
+    // смягчением формулы спикера. У всех двенадцати прошедших слова нет.
+    .replace(/ink bleed/gi, 'soft ink spread')
+    .replace(/\bbleed(ing)?\b/gi, 'spread');
+}
+
 export const LEAK_PATTERNS = [
   /#[0-9a-f]{6}\b/i,
   /\b[0-9a-f]{6}\b(?=\s*(?:hex|цвет))/i,
