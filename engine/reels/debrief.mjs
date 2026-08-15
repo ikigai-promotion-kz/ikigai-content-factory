@@ -99,7 +99,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { runs, rows, problems, wins, spent } = await debrief({ roots, since });
 
   if (!runs.length) {
-    console.log('[дебриф] журналов не нашлось. Прогоны до 16.08.2026 их не вели.');
+    console.log('[дебриф] журналов не нашлось. Прогоны до 15.08.2026 их не вели.');
     process.exit(0);
   }
 

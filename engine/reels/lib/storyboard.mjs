@@ -173,13 +173,13 @@ export function montagePrompt(panels, opts = {}) {
   // борда: спикер не уходит из кадра, титр не печатается на нём.
   const guards = [
     'Output ONE full-screen composition always: never show storyboard panels, numbers, grids or labels.',
-    // «never merge two of them» дописано 16.08.2026: на прогоне 15.08 модель не наложила
+    // «never merge two of them» дописано 15.08.2026: на прогоне 15.08 модель не наложила
     // два титра друг на друга, а СКЛЕИЛА соседние в один блок из двух строк
     // («Посчитай сам сколько» + «тебе это обходило.»). Запрет наложения этого не покрывал.
     'Only ONE headline on screen at a time: it fully disappears before the next appears, never overlapping.'
       + ' Never show two captions together and never merge two of them into one stacked block.',
     'Keep my original audio exactly as it is: do NOT re-voice, re-time or shorten the speech.',
-    // Дословность титра, 16.08.2026. Правило жило ТОЛЬКО в промпте борда («exactly these
+    // Дословность титра, 15.08.2026. Правило жило ТОЛЬКО в промпте борда («exactly these
     // words and nothing else»), а §10 правил требует держать правило про текст в обоих
     // текстах: «чистый борд не гарантирует чистое видео». Дыру видно замером: монтажные
     // промпты grunge и meme на куске 1 были ОДИНАКОВОЙ длины (3112 знаков) с одной и той
@@ -188,7 +188,7 @@ export function montagePrompt(panels, opts = {}) {
     // подпись по-своему.
     'Every caption is quoted for you already written: reproduce it letter for letter,'
       + ' never re-spell it, never shorten it and never invent a word.',
-    // Набор титра, 16.08.2026. Дефект не в словах, а в ОТДЕЛЬНЫХ буквах: «з⊦аказывал»
+    // Набор титра, 15.08.2026. Дефект не в словах, а в ОТДЕЛЬНЫХ буквах: «з⊦аказывал»
     // вместо «заказывал», «обход⊦илось» вместо «обходилось» — лишний обломок литеры
     // внутри верного слова. Плашка при этом полностью села, то есть это не кадр анимации.
     //
