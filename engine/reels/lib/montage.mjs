@@ -81,6 +81,53 @@ export const LEAK_PATTERNS = [
 ];
 
 /**
+ * Гейт промпта БОРДА. Заведён 16.08.2026, до этого борд не проверялся ничем.
+ *
+ * Дыра была структурной: `preflight()` ниже гейтит параметры монтажа, а борд уходил в
+ * генерацию без единой проверки — при том, что кириллицу в подписях рисует именно он,
+ * и ошибка на борде уезжает в видео целиком. Проверять монтаж и не проверять борд —
+ * всё равно что мерить длину промпта и не читать его.
+ *
+ * @param {string} prompt - выход storyboardPrompt()
+ * @param {Array<{words:string}>} panels - панели, из которых он собран
+ * @returns {{ok:boolean, problems:string[], summary:string}}
+ */
+export function preflightBoard(prompt, panels = []) {
+  const problems = [];
+  const text = String(prompt || '');
+
+  if (!text.trim()) problems.push('промпт борда пустой');
+
+  // Число панелей задаётся числом, а не словом: на «шесть» модель дорисовывала лишнюю.
+  const declared = text.match(/exactly (\d+) panels/i);
+  if (!declared) problems.push('в промпте не задано число панелей числом');
+  else if (Number(declared[1]) !== panels.length) {
+    problems.push(`в промпте ${declared[1]} панелей, а собрано ${panels.length}`);
+  }
+
+  // Каждая подпись обязана присутствовать ДОСЛОВНО: борд рисует ровно то, что прочёл,
+  // и потерянная здесь подпись превращается в выдуманную моделью — то есть в кашу.
+  for (const [i, p] of panels.entries()) {
+    const caption = String(p.words || '').trim();
+    if (caption && !text.includes(caption)) {
+      problems.push(`подписи панели ${i + 1} («${caption}») нет в промпте борда дословно`);
+    }
+  }
+
+  // Шапка уезжает прямо в кадр видео — спалено автором метода 29.07.2026.
+  if (!/no title, no header/i.test(text)) problems.push('нет запрета шапки — она уедет в кадр видео');
+
+  const leaked = LEAK_PATTERNS.filter((re) => re.test(text));
+  if (leaked.length) problems.push('в промпте борда цветовой код, таймкод или имя файла');
+
+  return {
+    ok: problems.length === 0,
+    problems,
+    summary: `борд · панелей ${panels.length} · ${[...text].length} знаков`,
+  };
+}
+
+/**
  * Кредит-дисциплина: сначала один кусок, проверка глазами, потом остальные.
  * Возвращает порядок обработки — первый кусок отдельно, хвост пачкой.
  * @param {Array} segments

@@ -13,9 +13,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { segmentByPhrase } from './segment.mjs';
 import { grabPanelFrames, montagePrompt, storyboardPrompt } from './storyboard.mjs';
-import { montageParams, preflight } from './montage.mjs';
+import { montageParams, preflight, preflightBoard } from './montage.mjs';
 import { runBin } from './bin.mjs';
 import { STYLES, styleLine, keepSpeakerLine } from './styles.mjs';
+import { lint } from './lint.mjs';
 
 /**
  * Обойма типов планов, из которой берутся первые N по числу панелей. Набор намеренно
@@ -179,12 +180,20 @@ export async function preparePart({ src, segments, segNo, styleKey, keepBackgrou
   const WANT_MEDIAS = 2;
   const gate = preflight(params, { prompt, refs: WANT_MEDIAS, duration: Math.round(seg.duration) });
 
+  // Смысловая проверка поверх механической. Гейт видит, что промпт доехал целиком;
+  // линт видит, что в нём написано: противоречия (запрещаем и тут же просим) блокируют
+  // трату, всё остальное печатается предупреждением. Разделение намеренное — ложная
+  // тревога, которую нельзя обойти, кончается тем, что проверку отключают целиком.
+  const checks = lint({ panels, seg, montagePrompt: prompt, boardPrompt });
+  // Борд гейтится отдельно: у него своя проверка — число панелей и дословность подписей.
+  const boardGate = preflightBoard(boardPrompt, panels);
+
   const boardFile = path.join(outDir, `board-prompt-${seg.n}.txt`);
   const promptFile = path.join(outDir, `montage-prompt-${seg.n}.txt`);
   await writeFile(boardFile, boardPrompt, 'utf8');
   await writeFile(promptFile, prompt, 'utf8');
 
-  return { seg, style, keepBg, appearance, cut, panels, frames, board, boardPrompt, prompt, params, gate, boardFile, promptFile };
+  return { seg, style, keepBg, appearance, cut, panels, frames, board, boardPrompt, prompt, params, gate, boardGate, checks, boardFile, promptFile };
 }
 
 /** Подпись до limit знаков: набираем слова целиком, пока влезают. */
