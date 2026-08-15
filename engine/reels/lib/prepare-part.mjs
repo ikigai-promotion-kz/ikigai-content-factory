@@ -56,8 +56,18 @@ export const SHOTS = [
     object: 'two flat icon cards sliding in from the right behind him' },
   // «letters animate in» отсюда убрано 04.08.2026: борд выходил чистым, а в видео Omni
   // читал это как разрешение писать буквы и заполнял карточку псевдорусским.
-  { shot: 'QUOTE-CARD', motion: 'a quote card with one big quotation mark slides in beside the speaker', role: 'кульминация фразы',
-    object: 'a large card beside him carrying one big quotation mark' },
+  //
+  // Кавычки убраны 16.08.2026, и это была наша собственная петля. Промпт борда прямо
+  // запрещает кавычки («No quotation marks, no guillemets, no apostrophes anywhere»),
+  // а здесь мы их сами и заказывали — ровно тот же класс ошибки, что с бейджами движения
+  // 03.08: запрещаем и тут же просим, модель выполняет второе. Дальше срабатывает
+  // очевидная для модели логика: раз нарисована карточка-цитата с кавычками, внутрь надо
+  // положить цитату — и она кладёт псевдорусский («НАЬ ВИТЬ ДУЧЬ» на прогоне 15.08).
+  //
+  // Правило шире этого случая: `motion` описывает ДВИЖЕНИЕ, а не содержимое кадра.
+  // Что появляется в кадре — дело `object`, и он приходит снаружи под смысл фразы.
+  { shot: 'QUOTE-CARD', motion: 'a card slides in beside the speaker and settles', role: 'кульминация фразы',
+    object: 'a large blank card beside him with a thin accent border' },
   { shot: 'SPLIT-SCREEN L/R', motion: 'frame splits vertically, both halves drift slowly', role: 'сравнение',
     object: 'two facing cards on the right half behind him, one with a cross and one with a tick' },
   { shot: 'ZOOM-OUT REVEAL', motion: 'camera pulls back revealing the whole scene', role: 'раскрытие масштаба',

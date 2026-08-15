@@ -124,6 +124,10 @@ export function storyboardPrompt({ part, total, panels, preset, textAsObject = f
     'Accent arrows between panels showing the reading order left to right, top to bottom.',
     '',
     `Style: ${preset.type}. Russian captions must be spelled correctly, no invented words.`,
+    // Тот же набор титра, что и в промпте монтажа: правило про текст обязано стоять
+    // в обоих (§10 правил Omni), иначе чистый борд не спасает — проверено дважды.
+    'Each caption is set as ONE clean line in a single consistent typeface: never assembled from',
+    'mismatched or double-struck letters, never a ransom-note mix, never a stray half letter inside a word.',
     'No quotation marks, no guillemets, no apostrophes anywhere. Check every letter.',
   ].join('\n');
 }
@@ -169,7 +173,11 @@ export function montagePrompt(panels, opts = {}) {
   // борда: спикер не уходит из кадра, титр не печатается на нём.
   const guards = [
     'Output ONE full-screen composition always: never show storyboard panels, numbers, grids or labels.',
-    'Only ONE headline on screen at a time: it fully disappears before the next appears, never overlapping.',
+    // «never merge two of them» дописано 16.08.2026: на прогоне 15.08 модель не наложила
+    // два титра друг на друга, а СКЛЕИЛА соседние в один блок из двух строк
+    // («Посчитай сам сколько» + «тебе это обходило.»). Запрет наложения этого не покрывал.
+    'Only ONE headline on screen at a time: it fully disappears before the next appears, never overlapping.'
+      + ' Never show two captions together and never merge two of them into one stacked block.',
     'Keep my original audio exactly as it is: do NOT re-voice, re-time or shorten the speech.',
     // Дословность титра, 16.08.2026. Правило жило ТОЛЬКО в промпте борда («exactly these
     // words and nothing else»), а §10 правил требует держать правило про текст в обоих
@@ -180,6 +188,18 @@ export function montagePrompt(panels, opts = {}) {
     // подпись по-своему.
     'Every caption is quoted for you already written: reproduce it letter for letter,'
       + ' never re-spell it, never shorten it and never invent a word.',
+    // Набор титра, 16.08.2026. Дефект не в словах, а в ОТДЕЛЬНЫХ буквах: «з⊦аказывал»
+    // вместо «заказывал», «обход⊦илось» вместо «обходилось» — лишний обломок литеры
+    // внутри верного слова. Плашка при этом полностью села, то есть это не кадр анимации.
+    //
+    // Контроль нашёлся в собственном каталоге: у `gazeta-collage` в `extra` с 04.08 стоит
+    // «one typeface, perfectly readable, never ransom-note mismatched letters» — и он
+    // единственный из трёх коллажных стилей печатает без обломков. У `grunge` и `meme`
+    // такой строки нет, и оба дали по букве-призраку. Поэтому правило поднято из записи
+    // одного стиля в общий промпт: набор титра — забота каркаса, а не каждого стиля.
+    'The caption is set as ONE clean line in a single consistent typeface: never assembled from'
+      + ' mismatched or double-struck letters, never a ransom-note mix, never a stray half letter'
+      + ' inside a word.',
     'The speaker stays VISIBLE on screen in every second of the clip: never cut away to graphics only,'
       + ' graphics always sit behind him or beside him.',
     'Every headline sits in the lower third inside a safe margin: never over his face, never printed'
