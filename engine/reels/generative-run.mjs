@@ -14,6 +14,11 @@
  *   node reels/generative-run.mjs <видео> [words.json] --style=<ключ>
  *        [--out=папка] [--segments=1,2] [--keep-background] [--resume] [--objects=файл]
  *
+ * Файл дубля (`--objects`) несёт две вещи, которых не знает ни код, ни модель: предметы
+ * панелей под смысл фраз и `_внешность` — описание спикера словами. Внешность уходит
+ * одинаковой строкой во ВСЕ куски и держит континьюити между ними: кадры-вложения у
+ * каждого куска свои, поэтому текст — единственный общий якорь.
+ *
  * Первый запуск  : нарезка → борд куска 1 (≈7 кр) → СТОП, смотрим борд глазами.
  * --resume        : монтаж куска 1 (≈30 кр) → свой звук → кадры → СТОП, смотрим ролик.
  * --resume ещё раз: остальные куски тем же циклом → склейка → финал.
@@ -49,8 +54,10 @@ const BOARD_PARAMS = { aspect_ratio: '9:16', resolution: '2k', quality: 'high' }
  * @param {boolean} [o.resume] - снять остановку и идти дальше
  * @param {boolean} [o.dry] - дойти до первой траты и остановиться, ничего не оплачивая
  * @param {Object} [o.objects] - предметы панелей под смысл: {"<номер куска>": ["предмет", …]}
+ * @param {string} [o.appearance] - внешность спикера словами, ОДНА на весь прогон:
+ *   якорь континьюити между кусками, кадры-вложения у каждого куска свои
  */
-export async function generativeRun({ src, wordsPath, styleKey, outDir, only = [], keepBackground = false, resume = false, dry = false, objects = {} }) {
+export async function generativeRun({ src, wordsPath, styleKey, outDir, only = [], keepBackground = false, resume = false, dry = false, objects = {}, appearance = '' }) {
   const style = STYLES[styleKey];
   if (!style) throw new Error(`нет стиля «${styleKey}». Есть: ${STYLE_KEYS.join(', ')}`);
   if (!(await hfReady())) {
@@ -90,7 +97,7 @@ export async function generativeRun({ src, wordsPath, styleKey, outDir, only = [
   const probeKey = String(probeSeg.n);
 
   if (!state.parts[probeKey]?.board) {
-    const prep = await preparePart({ src, segments: allSegments, segNo: probeSeg.n, styleKey, keepBackground, outDir, objects: objects[probeSeg.n] || [] });
+    const prep = await preparePart({ src, segments: allSegments, segNo: probeSeg.n, styleKey, keepBackground, outDir, objects: objects[probeSeg.n] || [], appearance });
     printPrep(prep);
     if (!prep.gate.ok) {
       prep.gate.problems.forEach((p) => log(`  ✗ ${p}`));
@@ -98,15 +105,30 @@ export async function generativeRun({ src, wordsPath, styleKey, outDir, only = [
     }
 
     if (dry) {
-      const tpl = await writeObjectsTemplate({ src, segments, allSegments, styleKey, keepBackground, outDir, objects });
+      // `appearance` сюда передаётся обязательно: writeObjectsTemplate ПЕРЕЗАПИСЫВАЕТ
+      // файлы промптов, и без неё сухой прогон показывал человеку промпт без внешности,
+      // а платный уходил бы в модель с ней — то есть смотрели бы не то, что отправляем.
+      // Ровно так же 15.08.2026 терялись осмысленные предметы; грабля та же, поле новое.
+      const tpl = await writeObjectsTemplate({ src, segments, allSegments, styleKey, keepBackground, outDir, objects, appearance });
       log(`\n⏹  СУХОЙ ПРОГОН: дошли до первой траты и остановились, кредиты не списаны.`);
       log(`   Промпт борда: ${prep.boardFile}`);
       log(`   Промпт монтажа: ${prep.promptFile}`);
-      log(`\n   ПРЕДМЕТЫ В КАДРЕ. Заготовка: ${tpl}`);
-      log('   Сейчас на панелях стоят дежурные предметы — они одинаковы для любой фразы,');
-      log('   поэтому кадр заполняется, но не дополняет сказанное. Заполните заготовку:');
-      log('   на каждую панель предмет ПРО ЭТУ фразу, короткой английской фразой.');
-      log(`   Затем: node reels/generative-run.mjs … --objects=${path.basename(tpl)}`);
+      log(`\n   ФАЙЛ ДУБЛЯ. Заготовка: ${tpl}`);
+      // Подсказку печатаем по ФАКТУ заполненности, а не всегда: раньше строка «сейчас
+      // стоят дежурные предметы» выводилась даже с полным файлом предметов и врала.
+      const filled = (objects[probeSeg.n] || []).filter((x) => String(x).trim()).length;
+      if (filled) {
+        log(`   Предметы под смысл заданы: ${filled} из ${prep.panels.length} панелей куска ${probeSeg.n}.`);
+      } else {
+        log('   Сейчас на панелях стоят дежурные предметы — они одинаковы для любой фразы,');
+        log('   поэтому кадр заполняется, но не дополняет сказанное. Заполните заготовку:');
+        log('   на каждую панель предмет ПРО ЭТУ фразу, короткой английской фразой.');
+        log(`   Затем: node reels/generative-run.mjs … --objects=${path.basename(tpl)}`);
+      }
+      if (!appearance) {
+        log('   Внешность спикера НЕ задана: впишите `_внешность` в файл дубля, иначе');
+        log('   между кусками модель перекрасит одежду и волосы.');
+      }
       log('\n   Убрать --dry, чтобы собрать борд (≈7 кр) с тем, что есть сейчас.');
       return { stage: 'dry', prep, objectsTemplate: tpl };
     }
@@ -133,7 +155,7 @@ export async function generativeRun({ src, wordsPath, styleKey, outDir, only = [
 
   // ── Монтаж куска-разведчика, затем вторая остановка ──
   if (!state.parts[probeKey].final) {
-    const prep = await preparePart({ src, segments: allSegments, segNo: probeSeg.n, styleKey, keepBackground, outDir, objects: objects[probeSeg.n] || [] });
+    const prep = await preparePart({ src, segments: allSegments, segNo: probeSeg.n, styleKey, keepBackground, outDir, objects: objects[probeSeg.n] || [], appearance });
     const final = await montageOne({ prep, board: state.parts[probeKey].board, outDir });
     state.parts[probeKey].final = final.finalPath;
     state.parts[probeKey].raw = final.rawPath;
@@ -168,7 +190,7 @@ export async function generativeRun({ src, wordsPath, styleKey, outDir, only = [
     const key = String(seg.n);
     if (state.parts[key]?.final) { log(`кусок ${seg.n} уже готов — пропускаю`); continue; }
     log(`\n── кусок ${seg.n} из ${segments.length} ──`);
-    const prep = await preparePart({ src, segments: allSegments, segNo: seg.n, styleKey, keepBackground, outDir, objects: objects[seg.n] || [] });
+    const prep = await preparePart({ src, segments: allSegments, segNo: seg.n, styleKey, keepBackground, outDir, objects: objects[seg.n] || [], appearance });
     if (!prep.gate.ok) {
       prep.gate.problems.forEach((p) => log(`  ✗ ${p}`));
       throw new Error(`гейт не пройден на куске ${seg.n} — прогон остановлен, оплаченное сохранено`);
@@ -260,15 +282,18 @@ export async function montageOne({ prep, board, outDir }) {
 }
 
 /**
- * Заготовка предметов: по строке на панель каждого куска, с фразой рядом.
+ * Заготовка файла дубля: внешность спикера плюс по строке на панель каждого куска.
  *
  * Формат придумывать не надо — файл уже правильной формы, остаётся вписать предметы.
  * Фраза лежит в ключе `_фраза` именно затем, чтобы предмет писался ПОД НЕЁ, а не
  * абстрактно: дежурный предмет из SHOTS одинаково подходит к любому тексту и потому
  * не подходит ни к какому.
+ *
+ * `_внешность` стоит первым ключом: это единственное, что обязано быть ОДИНАКОВЫМ во
+ * всех кусках, и без него модель перекрашивает одежду на стыке (замерено 15.08.2026).
  */
-async function writeObjectsTemplate({ src, segments, allSegments, styleKey, keepBackground, outDir, objects = {} }) {
-  const tpl = {};
+async function writeObjectsTemplate({ src, segments, allSegments, styleKey, keepBackground, outDir, objects = {}, appearance = '' }) {
+  const tpl = { _внешность: appearance };
   for (const seg of segments) {
     // Панели считает та же preparePart — иначе заготовка разъедется с прогоном.
     // Предметы передаём те же, что у прогона: эта функция ПЕРЕЗАПИСЫВАЕТ файлы
@@ -276,7 +301,7 @@ async function writeObjectsTemplate({ src, segments, allSegments, styleKey, keep
     // прогон уходил бы в модель не с тем, что показал человеку (поймано 15.08.2026).
     const p = await preparePart({
       src, segments: allSegments, segNo: seg.n, styleKey, keepBackground, outDir,
-      objects: objects[seg.n] || [],
+      objects: objects[seg.n] || [], appearance,
     });
     // Уже заполненный предмет показываем в заготовке, чтобы её можно было
     // перечитать и поправить, а не собирать заново с нуля.
@@ -303,6 +328,17 @@ export function readObjectsFile(raw) {
 }
 
 /**
+ * Внешность спикера из того же файла дубля.
+ *
+ * Отдельной функцией, а не полем в `readObjectsFile()`: её выход разбирают ещё
+ * `scripts/style-showcase.mjs` и `scripts/storyboard-live.mjs`, и смена формы возврата
+ * сломала бы обоих ради одной строки.
+ */
+export function readAppearance(raw) {
+  return String(raw?._внешность || raw?.appearance || '').trim();
+}
+
+/**
  * Кадры для приёмки: ролик раскладывается по секунде, смотрит их Claude Code.
  *
  * Своя реализация вместо `lib/qa-video.mjs` намеренно: тот ходит в Claude API и
@@ -324,6 +360,9 @@ function printPrep(prep) {
   prep.panels.forEach((p, i) => log(`  ${i + 1}. ${p.t.toFixed(2)}с · ${p.shot} · «${p.words}» · ${p.role}`));
   log(`фон за спикером: ${prep.keepBg ? 'оставляем как снят' : prep.style.background}`);
   log(`текст на предметах: ${prep.style.textAsObject === true ? 'разрешён, по одному короткому слову' : 'запрещён'}`);
+  // Внешность печатаем ДО оплаты: пустая строка означает, что между кусками якоря нет
+  // и модель вольна перекрасить одежду — это надо увидеть до траты, а не на приёмке.
+  log(`внешность спикера: ${prep.appearance ? prep.appearance : 'НЕ ЗАДАНА — между кусками может уехать одежда и цвет волос'}`);
   log(`гейт: ${prep.gate.summary}`);
 }
 
@@ -358,7 +397,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const src = positional[0];
   const styleKey = flag('style');
   if (!src || !styleKey) {
-    console.error('Использование: node reels/generative-run.mjs <видео> [words.json] --style=<ключ> [--out=папка] [--segments=1,2] [--keep-background] [--resume] [--dry] [--objects=файл.json]');
+    console.error('Использование: node reels/generative-run.mjs <видео> [words.json] --style=<ключ> [--out=папка] [--segments=1,2] [--keep-background] [--resume] [--dry] [--objects=файл.json] [--appearance="внешность спикера"]');
     console.error(`Стили: ${STYLE_KEYS.join(', ')}`);
     console.error('Транскрипт: node reels/transcribe-local.mjs <видео>  (бесплатно, офлайн)');
     process.exit(1);
@@ -371,12 +410,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const only = (flag('segments') || '').split(',').filter(Boolean).map(Number);
 
   const objectsFile = flag('objects');
-  const objects = objectsFile
-    ? readObjectsFile(JSON.parse(await readFile(objectsFile, 'utf8')))
-    : {};
+  const objectsRaw = objectsFile ? JSON.parse(await readFile(objectsFile, 'utf8')) : null;
+  const objects = objectsRaw ? readObjectsFile(objectsRaw) : {};
+
+  // Внешность живёт в файле дубля рядом с предметами — это свойство ОДНОГО дубля,
+  // как и они. Флаг оставлен ручным переопределением для быстрых прогонов без файла.
+  const appearance = flag('appearance') || readAppearance(objectsRaw);
 
   generativeRun({
-    src, wordsPath, styleKey, outDir, only, objects,
+    src, wordsPath, styleKey, outDir, only, objects, appearance,
     keepBackground: args.includes('--keep-background'),
     resume: args.includes('--resume'),
     dry: args.includes('--dry'),

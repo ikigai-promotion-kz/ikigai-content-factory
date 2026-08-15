@@ -171,6 +171,15 @@ export function montagePrompt(panels, opts = {}) {
     'Output ONE full-screen composition always: never show storyboard panels, numbers, grids or labels.',
     'Only ONE headline on screen at a time: it fully disappears before the next appears, never overlapping.',
     'Keep my original audio exactly as it is: do NOT re-voice, re-time or shorten the speech.',
+    // Дословность титра, 16.08.2026. Правило жило ТОЛЬКО в промпте борда («exactly these
+    // words and nothing else»), а §10 правил требует держать правило про текст в обоих
+    // текстах: «чистый борд не гарантирует чистое видео». Дыру видно замером: монтажные
+    // промпты grunge и meme на куске 1 были ОДИНАКОВОЙ длины (3112 знаков) с одной и той
+    // же подписью, и на ней grunge напечатал «у дизайнеров?» чисто, а meme — «у дизайтеров?».
+    // То есть дело не в длине промпта, а в том, что монтажу никто не запрещал переписать
+    // подпись по-своему.
+    'Every caption is quoted for you already written: reproduce it letter for letter,'
+      + ' never re-spell it, never shorten it and never invent a word.',
     'The speaker stays VISIBLE on screen in every second of the clip: never cut away to graphics only,'
       + ' graphics always sit behind him or beside him.',
     'Every headline sits in the lower third inside a safe margin: never over his face, never printed'

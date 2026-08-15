@@ -321,12 +321,16 @@ export const STYLES = {
     textAsObject: true,
     light: 'flat bright light, no shadows',
     proof: {
-      date: '2026-08-14',
-      evidence: 'projects/AI-agenty/Video-fabrika/vitrina-stiley-0814/meme/part-1-final.mp4',
+      date: '2026-08-16',
+      evidence: 'projects/AI-agenty/Video-fabrika/proverka-0816/meme/final-meme.mp4',
       verdict: 'принят',
-      note: 'комикс-панели, стикеры и эмодзи, титры дословны; слова на стикерах чистые',
+      note: 'два куска подряд, 17 кадров приёмки: все титры дословны (включая «у дизайнеров?», '
+        + 'которое 15.08 вышло как «дизайтеров»), свитер и цвет волос держатся через стык. '
+        + 'Слова на стикерах чистые: СЧЕТ, РАСХОД, АРХИВ, СУММА',
     },
-    risk: 'литеральные эмодзи срывают генерацию борда; кислотная палитра неуместна в премиальных темах',
+    risk: 'литеральные эмодзи срывают генерацию борда; кислотная палитра неуместна в премиальных темах. '
+      + 'На шоте SPLIT-SCREEN модель заливает свободную половину газетой с английской абракадаброй и '
+      + 'отодвигает спикера за край кадра — для этого стиля газета чужеродна',
   },
   'warm-brand': {
     name: 'Claude / тёплый бренд',
@@ -863,14 +867,32 @@ export function listStyles() {
  * Формулировка снята дословно с рабочего скилла автора метода — у него сработала
  * на всех двенадцати бордах батча 14.07.2026. Идёт в ОБА промпта: борда и монтажа.
  *
+ * ── Внешность словами, 16.08.2026 ──
+ *
+ * Формула держит человека ВНУТРИ куска, но не между кусками: она ссылается на
+ * «приложенные кадры», а кадры у каждого куска СВОИ. Общего якоря нет вообще, и на
+ * полных роликах 15.08 это видно: в `meme` на стыке первого и второго куска тёмно-синий
+ * свитер в рубчик стал серой футболкой, в `grunge` фиолетовый верх волос пропал в первом
+ * куске и вернулся ядовитым в третьем.
+ *
+ * Единственное, что можно сделать одинаковым во всех кусках, — ТЕКСТ. Поэтому внешность
+ * называется словами и приходит снаружи: это свойство ДУБЛЯ, а не стиля, — константа
+ * стиля его знать не может. Живёт в файле дубля рядом с предметами (ключ `_внешность`).
+ *
+ * Предложение вставлено МЕЖДУ существующими и ни одну регулярку `softenForFilter()`
+ * не разрывает — смягчение на втором заходе фильтра внешность сохраняет.
+ *
  * @param {string} key - ключ стиля, из него берётся фон
+ * @param {string} [appearance] - внешность спикера словами, одинаковая во всех кусках
  * @returns {string}
  */
-export function keepSpeakerLine(key) {
+export function keepSpeakerLine(key, appearance = '') {
   const s = STYLES[key];
   if (!s) throw new Error(`нет стиля «${key}»`);
+  const named = String(appearance).trim();
   return 'Keep the man EXACTLY as in the attached frames: exact face, hair, beard, skin, clothes, body and pose, '
     + 'identical to the attachment. Do NOT redraw, restyle or replace him with another person, do NOT beautify. '
+    + (named ? `He is ${named}, and he looks exactly the same in every segment. ` : '')
     + `The ONLY thing that changes is what is BEHIND him: cut him out from his room and place him in front of ${s.background}. `
     + 'Keep his cut-out edges natural. He stays a real photograph; only the background is new.';
 }

@@ -96,9 +96,12 @@ const CAPTION_MAX_CHARS = 24;
  * @param {string} o.outDir - куда класть кусок, кадры и промпты
  * @param {string[]} [o.objects] - предметы панелей ПОД СМЫСЛ фраз, по одному на панель.
  *   Пусто — берутся дежурные из SHOTS (см. комментарий к массиву).
+ * @param {string} [o.appearance] - внешность спикера словами. Свойство ДУБЛЯ, а не стиля:
+ *   одинаковая строка во всех кусках — единственный якорь континьюити между ними,
+ *   потому что кадры-вложения у каждого куска свои (см. keepSpeakerLine).
  * @returns {Promise<Object>} всё нужное для платных вызовов и для печати человеку
  */
-export async function preparePart({ src, segments, segNo, styleKey, keepBackground = false, outDir, objects = [] }) {
+export async function preparePart({ src, segments, segNo, styleKey, keepBackground = false, outDir, objects = [], appearance = '' }) {
   const style = STYLES[styleKey];
   if (!style) throw new Error(`нет стиля «${styleKey}»`);
   const seg = segments.find((s) => s.n === segNo);
@@ -142,11 +145,11 @@ export async function preparePart({ src, segments, segNo, styleKey, keepBackgrou
       textAsObject: style.textAsObject === true,
     }),
     '',
-    keepBg ? '' : keepSpeakerLine(styleKey),
+    keepBg ? '' : keepSpeakerLine(styleKey, appearance),
   ].filter(Boolean).join('\n');
 
   const prompt = montagePrompt(panels, {
-    style: styleLine(styleKey) + (keepBg ? '' : ` ${keepSpeakerLine(styleKey)}`),
+    style: styleLine(styleKey) + (keepBg ? '' : ` ${keepSpeakerLine(styleKey, appearance)}`),
     textAsObject: style.textAsObject === true,
   });
 
@@ -171,7 +174,7 @@ export async function preparePart({ src, segments, segNo, styleKey, keepBackgrou
   await writeFile(boardFile, boardPrompt, 'utf8');
   await writeFile(promptFile, prompt, 'utf8');
 
-  return { seg, style, keepBg, cut, panels, frames, board, boardPrompt, prompt, params, gate, boardFile, promptFile };
+  return { seg, style, keepBg, appearance, cut, panels, frames, board, boardPrompt, prompt, params, gate, boardFile, promptFile };
 }
 
 /** Подпись до limit знаков: набираем слова целиком, пока влезают. */
