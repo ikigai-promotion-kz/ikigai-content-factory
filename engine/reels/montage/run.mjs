@@ -26,6 +26,7 @@ import { spliceScenes } from './splice.mjs';
 import { readRegistry, recordRelease, sameness } from './registry.mjs';
 import { measureLoudness, TARGET } from './loudness.mjs';
 import { runBin } from '../lib/bin.mjs';
+import { wordsOf } from '../lib/transcript.mjs';
 
 const FPS = 30;
 
@@ -44,7 +45,8 @@ export async function run(configPath) {
   await mkdir(workDir, { recursive: true });
 
   const src = near(cfg.src);
-  const words = JSON.parse(readFileSync(near(cfg.wordsPath), 'utf8'));
+  // words.json бывает двух форм: плоский список и {reviewed, words} после --sign.
+  const words = wordsOf(JSON.parse(readFileSync(near(cfg.wordsPath), 'utf8')));
   const duration = await probeDuration(src);
   const { w: srcW, h: srcH } = await probeSize(src);
   log(`вход: ${srcW}×${srcH}, ${duration.toFixed(2)} сек`);
@@ -305,6 +307,11 @@ function fileUrl(p) {
 function log(msg) { console.log(`[монтаж] ${msg}`); }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // У студента это легитимный ТЕХМОНТАЖ (нарезка пауз, караоке-субтитры, титры) —
+  // им собирается демо чек-листа. Но стилем он не является: баннер напоминает,
+  // чтобы плашки не выдавались за стили (инцидент владельца 24.08.2026).
+  console.log('[монтаж] ТЕХМОНТАЖ: нарезка, субтитры и титры поверх снятого. Это НЕ стиль ролика.');
+  console.log('[монтаж] Стили — генеративная ветка, канон: https://montazh.ikigaipromotion.kz/style');
   const cfg = process.argv[2];
   if (!cfg) {
     console.error('Использование: node reels/montage/run.mjs <путь-к-конфигу.mjs>');

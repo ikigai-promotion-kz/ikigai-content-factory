@@ -22,11 +22,12 @@
       "intent": "4K фотореализм, hero-сцена, богатая диаграмма, кириллица в кадре"
     },
     "gpt-image": {
-      "model": "fal-ai/gemini-3-pro-image-preview",
+      "model": "openai/gpt-image-2",
+      "edit": "openai/gpt-image-2/edit",
       "backend": "fal",
       "env": "GEN_MODEL_GPT",
       "intent": "текст-в-кадре через fal: editorial/Swiss/letterpress/callout/инфографика/big-number",
-      "note": "Это путь ЧЕРЕЗ FAL, и здесь GPT Image 2 действительно нет: REST Higgsfield отдавал 404 (проба 07.07.2026), fal-ai/gpt-image-2 в каталоге помечен '⚠ slug'. Честный фолбэк на PRO. Настоящий GPT Image 2 живёт в интенте gpt-image-hf ниже — через CLI, и он доступен."
+      "note": "Проверено 24.08.2026 замером: GPT Image 2 на fal ЕСТЬ, но slug — 'openai/gpt-image-2' (лаборатория OpenAI, без префикса fal-ai/). Прежняя запись искала 'fal-ai/gpt-image-2', его не существует — отсюда 404 и ложный вывод 'на fal нет'. ВНИМАНИЕ: схема входа отличается от nano-banana — принимает image_size ({width,height} кратно 16, макс ребро 3840) и quality, НЕ принимает aspect_ratio, поэтому genimage.js этой модели не годится без правки. В edit-режиме image_size обязателен явно: пресет landscape_16_9 отдаёт 1088x608."
     },
     "gpt-image-hf": {
       "model": "gpt_image_2",
