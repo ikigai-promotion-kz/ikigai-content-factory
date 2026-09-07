@@ -116,7 +116,12 @@ node reels/generative-run.mjs мой-дубль.mp4 --style=<КЛЮЧ>
 ### 1. Транскрипт — бесплатно
 
 ```
-node reels/transcribe-local.mjs мой-дубль.mp4 --out=мой-дубль.words.json
+node reels/transcribe-local.mjs мой-дубль.mp4
+```
+
+Файл `мой-дубль.words.json` ляжет рядом с видео — отдельного флага для пути нет.
+
+```
 ```
 
 ### 2. Подготовка куска — бесплатно
