@@ -99,6 +99,16 @@ export function softenForFilter(prompt) {
     .replace(/\bbleed(ing)?\b/gi, 'spread');
 }
 
+/**
+ * Служебные утечки ищем ВНЕ цитируемого текста. Титр «в 20:00» — это то, что сказал
+ * спикер, и он обязан попасть в кадр (правка владельца 07.09.2026: время показывать как
+ * время). Регулярка на таймкод ловила его как «At 6.44s» и глушила прогон.
+ * Перенесено из движка руками: файл намеренно разный (импорт моделей), паритет его не зеркалит.
+ */
+export function withoutQuoted(text) {
+  return String(text || '').replace(/"[^"]*"/g, '""').replace(/«[^»]*»/g, '«»');
+}
+
 export const LEAK_PATTERNS = [
   /#[0-9a-f]{6}\b/i,
   /\b[0-9a-f]{6}\b(?=\s*(?:hex|цвет))/i,
@@ -145,7 +155,7 @@ export function preflightBoard(prompt, panels = []) {
   // Шапка уезжает прямо в кадр видео — спалено автором метода 29.07.2026.
   if (!/no title, no header/i.test(text)) problems.push('нет запрета шапки — она уедет в кадр видео');
 
-  const leaked = LEAK_PATTERNS.filter((re) => re.test(text));
+  const leaked = LEAK_PATTERNS.filter((re) => re.test(withoutQuoted(text)));
   if (leaked.length) problems.push('в промпте борда цветовой код, таймкод или имя файла');
 
   return {
@@ -195,7 +205,7 @@ export function preflight(params, expect = {}) {
   }
 
   // Служебные строки, которые модель печатает прямо в кадр как текст (см. LEAK_PATTERNS).
-  const leaked = LEAK_PATTERNS.filter((re) => re.test(sent));
+  const leaked = LEAK_PATTERNS.filter((re) => re.test(withoutQuoted(sent)));
   if (leaked.length) {
     problems.push('в промпте остались цветовой код, таймкод или имя файла — движок напечатает их в кадре');
   }

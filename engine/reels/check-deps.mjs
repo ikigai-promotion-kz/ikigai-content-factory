@@ -111,10 +111,11 @@ console.log('\nHiggsfield (нужен только для платных вет�
   if (cli) {
     console.log('  ✓ командная строка higgsfield установлена — доступны оба пути');
   } else {
-    console.log('  · командной строки higgsfield нет — это нормально');
+    console.log('  · командной строки higgsfield нет — для чата и ручного пути стилей это нормально');
     console.log('     Работайте через коннектор в приложении Claude:');
     console.log('     Customize → Connectors → https://mcp.higgsfield.ai/mcp');
-    console.log('     Скрипты печатают оба пути, коннекторный идёт первым.');
+    console.log('     Сквозной раннер стилей (reels/generative-run.mjs) без неё НЕ запустится.');
+    console.log('     Поставить: npm install -g @higgsfield/cli  →  higgsfield auth login');
   }
 }
 

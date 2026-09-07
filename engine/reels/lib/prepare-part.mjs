@@ -207,7 +207,15 @@ function capChars(list, limit) {
   return out.join(' ');
 }
 
-/** Разбить слова на n непрерывных групп, остаток раскидать по первым — без пустых. */
+/**
+ * Разбить слова на n непрерывных групп, остаток раскидать по первым — без пустых.
+ *
+ * Ровный счёт слов режет по смыслу: 07.09.2026 владелец получил титры «Zoom в» вместо
+ * «в Zoom» и «00 8» вместо «в 20:00 · 8 сентября». Поэтому после ровной нарезки границы
+ * сдвигаются по двум правилам: предлог или союз не остаётся последним словом титра
+ * (уезжает к следующему), а число не отрывается от идущего за ним месяца.
+ * Время в words.json держим одним токеном «20:00» — расшифровка бьёт его на «20» и «00».
+ */
 function splitWords(words, n) {
   const base = Math.floor(words.length / n);
   const extra = words.length % n;
@@ -218,5 +226,21 @@ function splitWords(words, n) {
     out.push(words.slice(i, i + size));
     i += size;
   }
+  for (let g = 0; g < out.length - 1; g += 1) {
+    while (out[g].length > 1 && shouldCarryOver(out[g][out[g].length - 1], out[g + 1][0])) {
+      out[g + 1].unshift(out[g].pop());
+    }
+  }
   return out;
+}
+
+const FUNCTION_WORDS = new Set(['в', 'во', 'и', 'на', 'по', 'с', 'со', 'к', 'ко', 'о', 'об', 'от', 'за', 'у', 'не', 'а', 'но', 'из', 'до', 'для', 'при', 'под', 'над', 'без', 'же', 'ли', 'бы', 'то', 'что', 'как']);
+const MONTHS = /^(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)[.,!?]?$/i;
+
+/** Последнее слово группы должно уехать в следующую: предлог/союз или число перед месяцем. */
+function shouldCarryOver(last, next) {
+  const bare = String(last.w || '').toLowerCase().replace(/[.,!?;:]$/, '');
+  if (FUNCTION_WORDS.has(bare)) return true;
+  if (/^\d+$/.test(bare) && next && MONTHS.test(String(next.w || ''))) return true;
+  return false;
 }

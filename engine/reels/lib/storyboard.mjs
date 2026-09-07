@@ -188,6 +188,10 @@ export function montagePrompt(panels, opts = {}) {
     // подпись по-своему.
     'Every caption is quoted for you already written: reproduce it letter for letter,'
       + ' never re-spell it, never shorten it and never invent a word.',
+    // 07.09.2026: «по Астане» вышло как «постане» — модель склеила предлог с названием
+    // и потеряла заглавную. Имена собственные и время держим буква в букву.
+    'Proper names keep their capital letter and stay a separate word exactly as quoted;'
+      + ' clock times such as "20:00" stay in that exact form with the colon.',
     // Набор титра, 15.08.2026. Дефект не в словах, а в ОТДЕЛЬНЫХ буквах: «з⊦аказывал»
     // вместо «заказывал», «обход⊦илось» вместо «обходилось» — лишний обломок литеры
     // внутри верного слова. Плашка при этом полностью села, то есть это не кадр анимации.
