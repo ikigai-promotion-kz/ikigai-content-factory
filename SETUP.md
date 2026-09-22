@@ -80,10 +80,11 @@ xcode-select --install
 (Windows обычно C:\Claude\content-factory · macOS обычно /Users/ИМЯ/Claude/content-factory)
 
 0. Если в строке выше осталось ВПИШИ_СЮДА_СВОЙ_ПУТЬ — остановись и попроси меня вписать путь. Затем покажи полный путь папки, в которой ты сейчас работаешь. Не совпадает с моим — ОСТАНОВИСЬ, ничего не скачивай и объясни, как открыть нужную папку. Если в папке уже лежит чужой проект с историей изменений — тоже остановись.
-1. Склонируй репозиторий https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory внутри моей рабочей папки
+1. Склонируй репозиторий https://github.com/ikigai-promotion-kz/ikigai-content-factory.git в подпапку factory внутри моей рабочей папки. Если папка factory там УЖЕ есть — значит, я ставил фабрику раньше: НЕ клонируй поверх и НЕ делай git pull. Выполни внутри factory git fetch и посчитай отставание: git rev-list --count HEAD..origin/main. Больше нуля — остановись и скажи мне прямо: «у вас старая версия, отстаёт на N обновлений; обновляйтесь промптом из блока «Обновите фабрику» на avtopilot.ikigaipromotion.kz — он сохранит ваши настройки». Ноль — версия свежая, иди дальше
 2. Прочитай файл factory/plugins/content-factory/skills/factory-setup/SKILL.md и дальше действуй строго по нему
 3. Скопируй ВСЕ папки скиллов из factory/plugins/content-factory/skills/ в папку .claude/skills/ моей рабочей папки
 4. Скопируй factory/CLAUDE.md.template в CLAUDE.md в корне моей рабочей папки и помоги мне его заполнить: спрашивай по одному пункту, не всю анкету сразу
+5. Проверь, стоит ли у меня плагин контент-фабрики: открой ~/.claude/plugins/installed_plugins.json и найди content-factory@ikigai-content-factory. Нет — пропусти. Есть — обнови его командами claude plugin marketplace update ikigai-content-factory и claude plugin update content-factory@ikigai-content-factory (если команда claude не находится — скажи мне набрать в чате /plugin marketplace update ikigai-content-factory и /plugin update content-factory@ikigai-content-factory), затем скажи перезапустить приложение. Старый плагин рядом со свежими скиллами путает Claude
 
 Я не программист. Объясняй каждый шаг простыми словами, спрашивай разрешение перед установкой программ и не проси меня вводить команды в терминал самому.
 В конце обязательно: прогони проверку окружения, смонтируй демо-ролик и открой готовый файл, чтобы я его посмотрел.
