@@ -1,6 +1,6 @@
 # Библиотека визуальных стилей IKIGAI PROMOTION
 
-> **38 стилей** (16 канонических + 22 из исследования «Арсенал визуала», 21.07.2026). Каждый доказан либо разбором референсов (★-оценка в `_ANALYSIS.md`), либо боевым выпуском марафона «24 стиля» с реакцией аудитории.
+> **39 стилей** (16 канонических + 22 из исследования «Арсенал визуала», 21.07.2026). Каждый доказан либо разбором референсов (★-оценка в `_ANALYSIS.md`), либо боевым выпуском марафона «24 стиля» с реакцией аудитории.
 > Пересобрано 21.07.2026 из трёх разрозненных реестров: 14 автопрофилей `extract-styles.mjs` + 8 брифов марафона + 6 кластеров A–F.
 > Прежняя версия заявляла «1143 профиля» — это была статистика прогона (1456 слайдов → 1143 сырых профиля), а в файл попадало 14 записей, из них 9 — вариации техно-неона и 3 прямых анти-паттерна. Перекос устранён.
 >
@@ -922,6 +922,35 @@ notes: apply OVER a finished composition — weaker standalone. Pairs well with 
 - **Модель:** gpt_image_2
 - **Когда брать:** как акцентный слой поверх готовой композиции — например поверх **Фото-натюрморта** или **Крафт-редакторского**. Самостоятельно слабее
 - **Ключевой приём:** die-cut силуэт вместо рамки — мгновенно читается как стикер, а не как «картинка в рамке»
+
+
+---
+
+## Фэшн-редакционный плакат
+
+```text
+STYLE TOKEN — "Fashion Editorial Placard"
+palette: #EAF2C8→#FBF6E6 lime-to-cream studio gradient with a soft pale halo circle behind the hero / #111111 black headline / #FF5A1F orange accent on ONE word / #D8F55A lime tape label
+type: ultra-condensed black grotesk ALL CAPS headline (Bebas Neue / Oswald Bold style), clean grotesk subline, handwritten marker for arrows and "листай →"
+layout: hero-stopper, one recurring model shot from a low wide angle; the hero HOLDS the proof (placard / two polaroids before-after / two sheets sketch-render); headline in the free third
+decor: lime masking-tape chip with the topic name on every slide, slide counter "1/6" with a thin vertical rule, hand-drawn black arrows, polaroid frames, UI window mock with selection box
+medium: high-end fashion editorial photography, studio seamless, glossy materials (cellophane, nylon), soft diffused key light, crisp shadows on the floor
+mood: bold, fresh, confident, aspirational, magazine-campaign
+notes: render gpt_image_2_5 variant sunburst (photoreal + clean Cyrillic + holds the hero from a reference); ONE hero with fixed wardrobe across the whole series
+```
+
+- **Настроение:** дерзкое, свежее, журнальное — рекламная кампания fashion-бренда, а не инфобиз. Держится на одной узнаваемой героине через всю серию.
+- **Палитра:** лаймово-кремовый студийный градиент `#EAF2C8`→`#FBF6E6` (база) · чёрный `#111111` (заголовок) · оранжевый `#FF5A1F` (единственный акцент в тексте) · лайм `#D8F55A` (плашка-метка)
+- **Типографика:** сверхузкий чёрный гротеск капсом для заголовка, нормальный гротеск для подзаголовка, рукописный маркер для стрелок и «листай →»
+- **Layout-архетипы:** hero-stopper с героиней на весь рост, съёмка снизу широким углом · «герой держит пруф» (табличка, два полароида до/после, два листа скетч/рендер) · триптих «один человек — три сцены» · UI-окно рядом с героиней
+- **Декор-приёмы:** лаймовая плашка-скотч с темой на каждом слайде, счётчик `1/6` с вертикальной чертой, рисованные стрелки, полароид-рамки, мягкий круг-ореол за героиней
+- **Платформы:** IG-лента · Threads · Telegram
+- **Форматы:** обзор инструмента или модели · было/стало · «N возможностей» · обложка-стоппер
+- **Модель:** `gpt_image_2_5`, variant `sunburst`, quality `xhigh`, 2k (8 кр. за кадр в Higgsfield)
+- **Когда брать:** обзор новой нейросети или инструмента, где каждый слайд может показать возможность, а не рассказать о ней · когда нужен человек в кадре и журнальная подача · отстройка от флэт-каруселей в ленте
+- **Ключевой приём:** героиня держит пруф в руках — объяснение становится частью кадра; одна и та же героиня на всех слайдах
+- **Доказательство:** REF-12 ★9/10 (обзор GPT-Image 2.5, 6 слайдов, сделан самой моделью)
+- **Риск:** цвет одежды совпадает с цветом акцента — дисциплина одного акцента плывёт, держать одежду в нейтрали или в цвете плашки; служебные слова шаблона («обложка») утекают в кадр — вычитывать; для флэт-плаката модель уходит в фотосток — там брать `gpt_image_2`
 
 ---
 
