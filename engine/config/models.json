@@ -36,6 +36,43 @@
       "intent": "НАСТОЯЩИЙ GPT Image 2: борд генеративного монтажа, кириллица в кадре, 2k/4k",
       "note": "Проверено 14.08.2026: `higgsfield model list --image` содержит gpt_image_2, `generate cost` отвечает 7 credits. Запись про 404 выше относится к REST-пути fal и к пробе от 07.07.2026 — за три недели до установки CLI (@higgsfield/cli 1.1.20, 29.07.2026). Higgsfield сам рекомендует CLI для Claude Code вместо MCP-коннектора. Вызов: higgsfield generate create gpt_image_2 --prompt … --image … --aspect_ratio 9:16 --resolution 2k --wait. Ходит через CLI, не через genimage.js (тот умеет только fal REST)."
     },
+    "nano-banana-21": {
+      "model": "google/nano-banana-2.1",
+      "edit": "google/nano-banana-2.1/edit",
+      "env": "GEN_MODEL_NB21",
+      "intent": "новый флагман Google (с 06.10.2026): текст в кадре, фотореализм, до 4K, нестандартные пропорции 4:1 и 1:4",
+      "note": "Добавлено 11.10.2026. Slug от имени лаборатории (google/…, без fal-ai/). Схема входа как у nano-banana: prompt + aspect_ratio + output_format; дополнительно resolution 1K/2K/4K и thinking_level. Дефолтом НЕ назначена: сначала парный прогон против nano-banana-pro на своих макетах."
+    },
+    "gpt-image-25": {
+      "model": "openai/gpt-image-2.5/sunburst/text-to-image",
+      "edit": "openai/gpt-image-2.5/sunburst/edit",
+      "backend": "fal",
+      "env": "GEN_MODEL_GPT25",
+      "intent": "GPT Image 2.5 Sunburst через fal: максимальная точность текста и деталей, премиальный макет; медленнее",
+      "note": "Добавлено 11.10.2026. Вышла на fal 08.09.2026. Цена по токенам и сильно зависит от quality (по умолчанию high). Схема входа отличается от nano-banana — см. замечание у gpt-image."
+    },
+    "gpt-image-25-fast": {
+      "model": "openai/gpt-image-2.5/flare/text-to-image",
+      "edit": "openai/gpt-image-2.5/flare/edit",
+      "backend": "fal",
+      "env": "GEN_MODEL_GPT25_FAST",
+      "intent": "GPT Image 2.5 Flare через fal: быстрый повседневный вариант той же модели",
+      "note": "Добавлено 11.10.2026. Тот же семейный slug, вариант flare."
+    },
+    "gpt-image-25-hf": {
+      "model": "gpt_image_2_5",
+      "backend": "higgsfield-cli",
+      "env": "GEN_MODEL_GPT25_HF",
+      "intent": "GPT Image 2.5 через командную строку Higgsfield: борд генеративного монтажа, кириллица в кадре, родной 4:5",
+      "note": "Замер 11.10.2026 (higgsfield 1.1.26, `generate cost`): 2k/high — 2,75 кредита против 6,5 у gpt_image_2; xhigh — 4,5; max — 9; 4k/high — 4,25. Параметр --variant flare|sunburst (цена одинаковая), quality low…max, пропорции включают 4:5 и 5:4 — зеркальная достройка краёв больше не нужна."
+    },
+    "nano-banana-21-hf": {
+      "model": "nano_banana_2_1",
+      "backend": "higgsfield-cli",
+      "env": "GEN_MODEL_NB21_HF",
+      "intent": "Nano Banana 2.1 через командную строку Higgsfield: до 14 картинок-референсов, видео-референсы, правка по маске",
+      "note": "Замер 11.10.2026 (`generate cost`): 1k — 1,5 кредита, 2k — 2, 4k — 3; thinking_level на цену не влияет. Столько же стоит nano_banana_pro на 2k."
+    },
     "recraft": {
       "model": "fal-ai/recraft/v4/pro/text-to-image",
       "env": "GEN_MODEL_RECRAFT",

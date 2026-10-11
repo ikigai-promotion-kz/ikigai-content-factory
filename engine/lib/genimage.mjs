@@ -50,6 +50,19 @@ function casting() {
   return _casting;
 }
 
+// Размер кадра для семейства GPT Image на fal — см. комментарий в generateImage.
+const GPT_IMAGE_SIZE = {
+  '4:5':  { width: 1088, height: 1360 },
+  '3:4':  { width: 1152, height: 1536 },
+  '2:3':  { width: 1024, height: 1536 },
+  '9:16': { width: 1088, height: 1936 },
+  '1:1':  { width: 1024, height: 1024 },
+  '5:4':  { width: 1360, height: 1088 },
+  '4:3':  { width: 1536, height: 1152 },
+  '3:2':  { width: 1536, height: 1024 },
+  '16:9': { width: 1936, height: 1088 },
+};
+
 /**
  * Сгенерировать одно изображение слайда.
  * @param {string} prompt - полный промпт сцены/слайда.
@@ -84,7 +97,19 @@ export async function generateImage(prompt, opts) {
   const aspectRatio = opts.aspect_ratio || '4:5';
   const cast = casting();
   const castPrompt = cast ? `${prompt}\n\n${cast}` : prompt;
-  const body = useReference
+  // Семейство GPT Image на fal (openai/gpt-image-…) НЕ знает поля aspect_ratio: размер
+  // задаётся объектом image_size, а без него приходит альбомный кадр 4:3. До 11.10.2026
+  // мы слали туда aspect_ratio — вертикальный макет приходил горизонтальным и резался
+  // по центру, заголовок уезжал за край. Стороны кратны 16 — этого требует модель.
+  const body = /^openai\/gpt-image/.test(model)
+    ? {
+        prompt: castPrompt,
+        image_size: GPT_IMAGE_SIZE[aspectRatio] || GPT_IMAGE_SIZE['4:5'],
+        num_images: 1,
+        output_format: 'png',
+        ...(useReference ? { image_urls: [referenceImageUrl] } : {}),
+      }
+    : useReference
     ? { prompt: castPrompt, image_urls: [referenceImageUrl], aspect_ratio: aspectRatio, output_format: 'png' }
     : {
         prompt: castPrompt,
