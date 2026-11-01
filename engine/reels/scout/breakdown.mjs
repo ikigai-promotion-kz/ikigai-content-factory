@@ -336,7 +336,9 @@ async function nameDramaturgy(r) {
 
   const res = await client.messages.create({
     model,
-    max_tokens: 2000,
+    // Лимит общий с размышлениями: ролик на 12 битов брал до 1622 токенов (замер 01.11.2026),
+    // а ответ растёт с числом битов.
+    max_tokens: 16_000,
     system: corpus
       ? [{ type: 'text', text: system }, { type: 'text', text: corpus }]
       : system,
